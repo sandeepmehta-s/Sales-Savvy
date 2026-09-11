@@ -21,8 +21,8 @@ const Register = () => {
     setLoading(true);
     setError('');
 
-    if (!formData.username || !formData.email || !formData.password || !formData.role) {
-      setError('Username, email, password, and role are required');
+    if (!formData.username || !formData.email || !formData.password) {
+      setError('Username, email, and password are required');
       setLoading(false);
       return;
     }
@@ -97,22 +97,6 @@ const Register = () => {
               disabled={loading}
               minLength="8"
             />
-          </div>
-
-          {/* Role */}
-          <div className="mb-3">
-            <label className="form-label">Role *</label>
-            <select
-              name="role"
-              className="form-select"
-              value={formData.role}
-              onChange={handleChange}
-              required
-              disabled={loading}
-            >
-              <option value="ROLE_CUSTOMER">Customer</option>
-              <option value="ROLE_ADMIN">Admin</option>
-            </select>
           </div>
 
           {/* Gender */}

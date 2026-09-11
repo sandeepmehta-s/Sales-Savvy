@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.security.Principal;
 import java.util.stream.Collectors;
 
 @RestController
@@ -27,7 +28,11 @@ public class OrderController {
     public ResponseEntity<OrderResponse> createOrderFromCart(
             @RequestParam String username,
             @RequestParam String razorpayOrderId,
-            @RequestParam java.math.BigDecimal amount) {
+            @RequestParam java.math.BigDecimal amount,
+            Principal principal) {
+        if (!principal.getName().equals(username)) {
+            return ResponseEntity.status(403).build();
+        }
         Orders order = orderService.createOrderFromCart(username, razorpayOrderId, amount);
         OrderResponse response = convertToOrderResponse(order);
         return ResponseEntity.ok(response);
@@ -44,7 +49,10 @@ public class OrderController {
     }
 
     @GetMapping("/user/{username}")
-    public ResponseEntity<List<OrderResponse>> getOrdersByUsername(@PathVariable String username) {
+    public ResponseEntity<List<OrderResponse>> getOrdersByUsername(@PathVariable String username, Principal principal) {
+        if (!principal.getName().equals(username)) {
+            return ResponseEntity.status(403).build();
+        }
         List<Orders> orders = orderService.getOrdersByUsername(username);
         List<OrderResponse> orderResponses = orders.stream()
             .map(this::convertToOrderResponse)

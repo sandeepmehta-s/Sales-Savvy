@@ -1,395 +1,464 @@
-# 🛒 Sales Savvy - E-Commerce Application
+# SalesSavvy
 
-A full-stack e-commerce application built with **React.js** (Frontend) and **Spring Boot** (Backend), featuring secure payment integration with Razorpay.
+SalesSavvy is a full-stack e-commerce application for discovering products, managing a personal cart, completing Razorpay payments, and tracking orders. It combines a React storefront with a Spring Boot REST API secured by JWT authentication.
 
----
+## Problem Statement
 
-## 📋 Table of Contents
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Installation & Setup](#installation--setup)
-- [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-- [API Endpoints](#api-endpoints)
-- [Screenshots](#screenshots)
-- [Contributing](#contributing)
-- [License](#license)
+Many small online stores start with disconnected product pages, manual order handling, and payment links. This creates friction for customers and makes it difficult for administrators to keep products, users, payments, and order status in sync.
 
----
+SalesSavvy addresses this by providing one application for:
 
-## ✨ Features
+- Browsing and searching a product catalog
+- Registering and signing in securely
+- Managing cart quantities and items
+- Creating and verifying Razorpay payments
+- Reviewing order history and order status
+- Managing products, users, and orders from an admin dashboard
 
-### User Features
-- 🔐 User Authentication (Login/Register)
-- 🛍️ Browse Products by Category
-- 🛒 Add/Remove Items from Cart
-- 💳 Secure Checkout with Razorpay Payment Gateway
-- 📦 Order History & Tracking
-- 👤 User Profile Management
+## Why Build This Project?
 
-### Admin Features
-- 📊 Admin Dashboard
-- ➕ Add/Edit/Delete Products
-- 👥 User Management
-- 📋 Order Management
-- 📈 View Total Sales
+The project was built to demonstrate a complete commerce workflow rather than an isolated UI or CRUD API. It brings together frontend routing, reusable React components, REST service modules, database persistence, JWT security, role-based authorization, and payment verification.
 
----
+It is also a practical foundation for learning how to evolve a portfolio application toward production concerns such as:
 
-## 🛠️ Tech Stack
+- Clear frontend/backend boundaries
+- DTO-based API responses
+- Service-layer business rules
+- Secure configuration through environment variables
+- Ownership checks for user-specific data
+- Testable payment and order workflows
+
+## Features
+
+### Customer features
+
+- User registration and login
+- JWT-based authentication
+- Product listing, details, category browsing, and search
+- Add products to cart
+- Increase, decrease, remove, or clear cart items
+- Razorpay order creation and signature verification
+- Order history and order details
+- Profile viewing and editing
+- Responsive storefront UI
+
+### Admin features
+
+- Admin dashboard with product, user, and order views
+- Add, update, and delete products
+- View and manage users
+- View all orders
+- Update order status
+- View total sales
+
+### Engineering features
+
+- Reusable React components for common UI, products, cart, and orders
+- Central Axios service with JWT request interceptor
+- Centralized backend exception handling
+- Bean validation on request models
+- BCrypt password hashing
+- Method-level Spring Security authorization
+- Environment-backed database, JWT, and Razorpay configuration
+- CORS configuration for local frontend development
+
+## System Architecture
+
+```mermaid
+flowchart LR
+    User[Customer or admin browser]
+    UI[React + Vite storefront]
+    Router[React Router]
+    Services[Axios service modules]
+    API[Spring Boot REST API]
+    Security[JWT filter + Spring Security]
+    Business[Service layer]
+    ORM[Spring Data JPA]
+    DB[(MySQL database)]
+    Payment[Razorpay API]
+
+    User --> UI
+    UI --> Router
+    Router --> Services
+    Services -->|JSON over HTTP| API
+    API --> Security
+    Security --> Business
+    Business --> ORM
+    ORM --> DB
+    Business --> Payment
+    Payment -->|Payment result| UI
+```
+
+### Layer responsibilities
+
+| Layer | Responsibility |
+| --- | --- |
+| React pages | Compose customer and admin screens |
+| React components | Reusable cards, forms, headers, loaders, modals, and summaries |
+| React services | Keep API calls grouped by auth, cart, product, order, payment, and user domain |
+| Axios API client | Adds Bearer token and handles expired sessions |
+| Controllers | Define REST endpoints and translate requests into service calls |
+| DTOs | Control the data shape exposed by the API |
+| Services | Apply business rules and coordinate repositories |
+| Repositories | Persist and query JPA entities |
+| Spring Security | Authenticate JWTs and enforce roles |
+| MySQL | Persist users, products, carts, cart items, and orders |
+| Razorpay | Create payment orders and verify payment signatures |
+
+## Customer Working Flow
+
+```mermaid
+flowchart TD
+    A[Open storefront] --> B{Authenticated?}
+    B -->|No| C[Register or sign in]
+    C --> D[Receive JWT]
+    B -->|Yes| E[Browse products]
+    D --> E
+    E --> F[Open product details]
+    F --> G[Add product to cart]
+    G --> H[Update quantity or remove items]
+    H --> I[Review cart total]
+    I --> J[Create Razorpay order]
+    J --> K[Open Razorpay checkout]
+    K --> L[Verify payment signature]
+    L --> M[Create paid order]
+    M --> N[Clear cart and show order history]
+```
+
+## Admin Working Flow
+
+```mermaid
+flowchart TD
+    A[Admin signs in] --> B[JWT contains admin authority]
+    B --> C[Admin dashboard]
+    C --> D[Manage products]
+    C --> E[Manage users]
+    C --> F[Manage orders]
+    D --> D1[Create, update, delete product]
+    E --> E1[View, update, delete user]
+    F --> F1[Update status or view sales]
+```
+
+## Payment Sequence
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant API as Spring Boot API
+    participant Razorpay
+    participant DB as MySQL
+
+    Browser->>API: POST /payment/create-order
+    API->>Razorpay: Create payment order
+    Razorpay-->>API: Razorpay order id
+    API-->>Browser: order id, amount, checkout key
+    Browser->>Razorpay: Open Checkout.js
+    Razorpay-->>Browser: payment id + signature
+    Browser->>API: POST /payment/verify
+    API->>Razorpay: Verify signature
+    Razorpay-->>API: Verification result
+    API->>DB: Create order and mark payment PAID
+    API-->>Browser: Payment and order success
+```
+
+## Data Model
+
+```mermaid
+erDiagram
+    USERS ||--|| CART : owns
+    CART ||--o{ CART_ITEM : contains
+    PRODUCTS ||--o{ CART_ITEM : selected_as
+    USERS ||--o{ ORDERS : places
+    ORDERS ||--o{ ORDER_ITEM : contains
+    PRODUCTS ||--o{ ORDER_ITEM : snapshot_of
+
+    USERS {
+        bigint id PK
+        string username UK
+        string email UK
+        string password_hash
+        string role
+        date dob
+        string gender
+    }
+    PRODUCTS {
+        bigint id PK
+        string name
+        string description
+        decimal price
+        string category
+        string photo
+    }
+    CART {
+        bigint id PK
+        bigint user_id FK
+    }
+    CART_ITEM {
+        bigint id PK
+        bigint cart_id FK
+        bigint product_id FK
+        int quantity
+    }
+    ORDERS {
+        bigint id PK
+        bigint user_id FK
+        string razorpay_order_id
+        string payment_id
+        decimal amount
+        string status
+        datetime created_at
+    }
+    ORDER_ITEM {
+        bigint id PK
+        bigint order_id FK
+        bigint product_id FK
+        string product_name
+        decimal price
+        int quantity
+    }
+```
+
+## Technology Stack
 
 ### Frontend
-- **React.js** (v19.1.1) - UI Library
-- **React Router DOM** (v7.9.4) - Navigation
-- **Bootstrap** (v5.3.8) - UI Framework
-- **Axios** (v1.12.2) - HTTP Client
-- **Vite** (v7.1.7) - Build Tool
+
+- React 19
+- Vite 7
+- React Router DOM 7
+- Axios
+- Bootstrap 5
+- Bootstrap Icons
+- JavaScript with JSX
 
 ### Backend
-- **Spring Boot** (v3.5.0) - Java Framework
-- **Spring Security** - Authentication & Authorization
-- **Spring Data JPA** - Database ORM
-- **MySQL** (v8.0.38) - Database
-- **JWT** (v0.11.5) - Token-based Authentication
-- **Razorpay SDK** (v1.4.5) - Payment Integration
 
----
+- Java 17 target
+- Spring Boot 3.5
+- Spring Web
+- Spring Data JPA
+- Spring Security
+- JWT with `jjwt`
+- Jakarta Bean Validation
+- MySQL Connector/J
+- Razorpay Java SDK
+- Maven Wrapper
 
-## 📁 Project Structure
+## API Reference
 
+All protected endpoints require:
+
+```http
+Authorization: Bearer <jwt-token>
 ```
-sales-savvy/
-├── sales-savvy-be/                    # Backend (Spring Boot)
+
+### Authentication
+
+| Method | Endpoint | Purpose | Auth |
+| --- | --- | --- | --- |
+| `POST` | `/auth/signup` | Register a customer | Public |
+| `POST` | `/auth/signin` | Authenticate and issue JWT | Public |
+| `GET` | `/auth/test` | Verify an authenticated token | Authenticated |
+
+### Products
+
+| Method | Endpoint | Purpose | Auth |
+| --- | --- | --- | --- |
+| `GET` | `/products` | List products | Public |
+| `GET` | `/products/{id}` | Get product details | Public |
+| `GET` | `/products/search?keyword=` | Search products | Public |
+| `GET` | `/products/category/{category}` | Filter by category | Public |
+| `GET` | `/products/categories` | List categories | Public |
+| `POST` | `/products` | Create product | Admin |
+| `PUT` | `/products/{id}` | Update product | Admin |
+| `DELETE` | `/products/{id}` | Delete product | Admin |
+
+### Cart
+
+| Method | Endpoint | Purpose | Auth |
+| --- | --- | --- | --- |
+| `GET` | `/cart/items?username=` | Get a user's cart | Owner |
+| `GET` | `/cart/count?username=` | Get item count | Owner |
+| `GET` | `/cart/total?username=` | Get cart total | Owner |
+| `POST` | `/cart/add?productId=&quantity=` | Add product to cart | Authenticated |
+| `PUT` | `/cart/update?username=&productId=&quantity=` | Update quantity | Owner |
+| `DELETE` | `/cart/remove?username=&productId=` | Remove cart item | Owner |
+| `DELETE` | `/cart/clear?username=` | Empty cart | Owner |
+
+### Orders
+
+| Method | Endpoint | Purpose | Auth |
+| --- | --- | --- | --- |
+| `POST` | `/orders/create` | Create order from cart | Owner |
+| `GET` | `/orders/user/{username}` | Get user's orders | Owner |
+| `GET` | `/orders/{id}` | Get order details | Authenticated |
+| `PUT` | `/orders/{razorpayOrderId}/cancel` | Cancel an order | Authenticated |
+| `GET` | `/orders` | List all orders | Admin |
+| `PUT` | `/orders/{razorpayOrderId}/status` | Update order status | Admin |
+| `GET` | `/orders/sales/total` | Get total sales | Admin |
+
+### Payments and users
+
+| Method | Endpoint | Purpose | Auth |
+| --- | --- | --- | --- |
+| `POST` | `/payment/create-order` | Create Razorpay order | Authenticated |
+| `POST` | `/payment/verify` | Verify signature and create paid order | Authenticated |
+| `GET` | `/payment/key` | Get Razorpay public key | Authenticated |
+| `GET` | `/users/profile` | Get current user profile | Authenticated |
+| `GET` | `/users/{username}` | Get own profile by username | Owner |
+| `GET` | `/users` | List users | Admin |
+| `PUT` | `/users/{id}` | Update user | Admin |
+| `DELETE` | `/users/{id}` | Delete user | Admin |
+
+## Project Structure
+
+```text
+Sales-Savvy/
+├── sales-savvy-be/                 # Spring Boot backend
 │   ├── src/main/java/com/salesSavvy/
-│   │   ├── config/                    # Security & CORS Configuration
-│   │   ├── controller/                # REST Controllers
-│   │   ├── dto/                       # Data Transfer Objects
-│   │   ├── entity/                    # JPA Entities
-│   │   ├── exception/                 # Custom Exceptions
-│   │   ├── repository/                # Database Repositories
-│   │   ├── security/                  # JWT & Security Classes
-│   │   └── service/                   # Business Logic
+│   │   ├── config/                 # Security, CORS, web configuration
+│   │   ├── controller/             # REST API controllers
+│   │   ├── dto/                    # API request/response models
+│   │   ├── entity/                 # JPA entities
+│   │   ├── exception/              # Domain and global error handling
+│   │   ├── repository/             # Spring Data repositories
+│   │   ├── security/               # JWT filter and utilities
+│   │   └── service/                # Business logic
 │   ├── src/main/resources/
-│   │   └── application.properties     # Application Configuration
-│   ├── pom.xml                        # Maven Dependencies
-│   └── .env.example                   # Environment Variables Template
+│   │   └── application.properties
+│   ├── pom.xml
+│   └── .env.example
 │
-└── sales_savvy_fr/                    # Frontend (React)
+└── sales_savvy_fr/                 # React + Vite frontend
     ├── src/
-    │   ├── components/                # Reusable Components
-    │   │   ├── auth/                  # Login & Register
-    │   │   ├── cart/                  # Cart Components
-    │   │   ├── common/                # Header, Footer, Loading
-    │   │   ├── orders/                # Order Components
-    │   │   └── products/              # Product Components
-    │   ├── context/                   # React Context (Auth)
-    │   ├── pages/                     # Page Components
-    │   ├── services/                  # API Service Layer
-    │   ├── App.jsx                    # Main App Component
-    │   └── main.jsx                   # Entry Point
-    ├── package.json                   # NPM Dependencies
-    └── vite.config.js                 # Vite Configuration
+    │   ├── components/             # Reusable UI and domain components
+    │   ├── context/                # Authentication context
+    │   ├── pages/                  # Route-level screens
+    │   ├── services/               # API modules
+    │   ├── App.jsx
+    │   ├── App.css
+    │   └── index.css
+    ├── package.json
+    └── vite.config.js
 ```
 
----
+## Prerequisites
 
-## 📌 Prerequisites
+- Java 17 or newer
+- Node.js 20 or newer
+- npm
+- MySQL 8 or compatible MySQL server
+- Razorpay test or production account for payments
 
-Before running the application, ensure you have the following installed:
+## Setup
 
-- **Java 17+** (JDK)
-- **Node.js** (v20.19.0 or v22.12.0+)
-- **MySQL** (v8.0+)
-- **Maven** (v3.9.9+)
-- **Razorpay Account** (for payment integration)
+### 1. Clone the repository
 
----
-
-## 🚀 Installation & Setup
-
-### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/sandeepkrmehta/sales-savvy.git
-cd sales-savvy
+git clone https://github.com/sandeepmehta-s/Sales-Savvy.git
+cd Sales-Savvy
 ```
 
-### 2️⃣ Backend Setup (Spring Boot)
+### 2. Create the database
 
-#### Step 1: Create MySQL Database
 ```sql
 CREATE DATABASE ecom;
 ```
 
-#### Step 2: Configure Environment Variables
-Copy `.env.example` to `.env` and update with your credentials:
+### 3. Configure the backend
+
+Copy `sales-savvy-be/.env.example` to a local environment file and provide values for the database, JWT, and Razorpay settings. Do not commit real credentials.
+
+The Spring configuration supports these variables:
+
+```text
+DB_URL=jdbc:mysql://localhost:3306/ecom
+DB_USERNAME=root
+DB_PASSWORD=your-database-password
+JWT_SECRET=your-long-random-secret
+JWT_EXPIRATION=86400000
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+```
+
+Start the backend:
 
 ```bash
 cd sales-savvy-be
-cp .env.example .env
-```
-
-Update `.env` file:
-```properties
-DB_URL=jdbc:mysql://localhost:3306/ecom
-DB_USERNAME=root
-DB_PASSWORD=your_password
-
-RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-
-JWT_SECRET=your_secure_jwt_secret_key
-ADMIN_PASSWORD=your_admin_password
-```
-
-#### Step 3: Install Dependencies & Run
-```bash
-# Using Maven Wrapper (Recommended)
-./mvnw clean install
 ./mvnw spring-boot:run
-
-# Or using Maven directly
-mvn clean install
-mvn spring-boot:run
 ```
 
-**Backend will run on:** `http://localhost:8080`
+Windows:
 
----
+```powershell
+cd sales-savvy-be
+.\mvnw.cmd spring-boot:run
+```
 
-### 3️⃣ Frontend Setup (React + Vite)
+Backend URL: `http://localhost:8080`
 
-#### Step 1: Install Dependencies
+### 4. Configure the frontend
+
+Create `sales_savvy_fr/.env`:
+
+```text
+VITE_API_URL=http://localhost:8080
+```
+
+Install dependencies and start Vite:
+
 ```bash
 cd sales_savvy_fr
 npm install
-```
-
-#### Step 2: Run Development Server
-```bash
 npm run dev
 ```
 
-**Frontend will run on:** `http://localhost:5173`
+Frontend URL: `http://localhost:5173`
 
----
+## Build and Test
 
-## ⚙️ Configuration
+Frontend:
 
-### Backend Configuration (`application.properties`)
-```properties
-# Server Configuration
-server.port=8080
-
-# Database Configuration
-spring.datasource.url=jdbc:mysql://localhost:3306/ecom
-spring.datasource.username=root
-spring.datasource.password=1234
-
-# JPA/Hibernate Configuration
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-
-# JWT Configuration
-jwt.secret=your_jwt_secret
-jwt.expiration=86400000
-
-# Razorpay Configuration
-razorpay.key.id=your_razorpay_key_id
-razorpay.key.secret=your_razorpay_key_secret
-```
-
-### Frontend Configuration (`vite.config.js`)
-```javascript
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
-  }
-})
-```
-
----
-
-## 🏃 Running the Application
-
-### Option 1: Development Mode
 ```bash
-# Terminal 1 - Backend
-cd sales-savvy-be
-./mvnw spring-boot:run
-
-# Terminal 2 - Frontend
 cd sales_savvy_fr
-npm run dev
-```
-
-### Option 2: Production Build
-```bash
-# Build Frontend
-cd sales_savvy_fr
+npm run lint
 npm run build
-
-# Build Backend
-cd sales-savvy-be
-./mvnw clean package
-
-# Run JAR file
-java -jar target/com.salesSavvy-0.0.1-SNAPSHOT.jar
 ```
 
----
-
-## 📡 API Endpoints
-
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/signup` | Register new user |
-| POST | `/auth/signin` | Login user |
-| GET | `/auth/test` | Test JWT token |
-
-### Products
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/products` | Get all products | ❌ |
-| GET | `/products/{id}` | Get product by ID | ❌ |
-| POST | `/products` | Add new product | ✅ Admin |
-| PUT | `/products/{id}` | Update product | ✅ Admin |
-| DELETE | `/products/{id}` | Delete product | ✅ Admin |
-
-### Cart
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/cart/items?username={username}` | Get user cart | ✅ |
-| POST | `/cart/add` | Add item to cart | ✅ |
-| PUT | `/cart/update` | Update cart item | ✅ |
-| DELETE | `/cart/remove` | Remove item from cart | ✅ |
-| DELETE | `/cart/clear` | Clear entire cart | ✅ |
-
-### Orders
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/orders/create` | Create new order | ✅ |
-| GET | `/orders` | Get all orders | ✅ Admin |
-| GET | `/orders/user/{username}` | Get user orders | ✅ |
-| PUT | `/orders/{razorpayOrderId}/status` | Update order status | ✅ Admin |
-
-### Payment
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/payment/create-order` | Create Razorpay order | ✅ |
-| POST | `/payment/verify` | Verify payment | ✅ |
-| GET | `/payment/key` | Get Razorpay key | ❌ |
-
-### Users
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/users` | Get all users | ✅ Admin |
-| GET | `/users/{username}` | Get user by username | ✅ |
-| GET | `/users/profile` | Get current user profile | ✅ |
-| PUT | `/users/{id}` | Update user | ✅ Admin |
-| DELETE | `/users/{id}` | Delete user | ✅ Admin |
-
----
-
-## 🔑 Default Admin Credentials
-
-```
-Username: admin
-Password: StrongAdmin123
-```
-
-⚠️ **Important:** Change the admin password after first login!
-
----
-
-## 📸 Screenshots
-
-### Home Page
-![Home Page](https://via.placeholder.com/800x400?text=Home+Page)
-
-### Product Listing
-![Products](https://via.placeholder.com/800x400?text=Product+Listing)
-
-### Shopping Cart
-![Cart](https://via.placeholder.com/800x400?text=Shopping+Cart)
-
-### Admin Dashboard
-![Admin Dashboard](https://via.placeholder.com/800x400?text=Admin+Dashboard)
-
----
-
-## 🐛 Common Issues & Solutions
-
-### Issue 1: MySQL Connection Error
-**Solution:** Ensure MySQL service is running and credentials in `.env` are correct.
+Backend:
 
 ```bash
-# Start MySQL service
-sudo systemctl start mysql
+cd sales-savvy-be
+./mvnw test
+./mvnw clean package
 ```
 
-### Issue 2: Port Already in Use
-**Solution:** Change port in `application.properties` (Backend) or `vite.config.js` (Frontend)
+## Security Notes
 
-### Issue 3: CORS Error
-**Solution:** Verify `CorsConfig.java` allows your frontend URL:
-```java
-corsConfiguration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-```
+- Passwords are hashed with BCrypt before persistence.
+- JWTs are required for protected API calls.
+- Admin operations use method-level role authorization.
+- User-specific cart, order, and profile endpoints validate the authenticated principal.
+- Payment signatures are verified by the backend before order creation.
+- Database, JWT, and Razorpay secrets should come from environment variables.
+- Configure HTTPS, restrictive production CORS origins, secure secret storage, and database migrations before deployment.
 
----
+## Current Limitations
 
-## 🤝 Contributing
+- The frontend uses alert-based feedback in a few legacy flows; a shared toast/notification system would improve consistency.
+- Some order operations should receive stricter ownership checks at the service boundary, not only at the controller boundary.
+- A production payment flow should also use Razorpay webhooks and idempotency protection.
+- The backend currently uses JPA `ddl-auto=update`; production deployments should use versioned migrations such as Flyway or Liquibase.
+- Automated integration coverage should be expanded for controllers, JWT authorization, cart ownership, and payment verification.
 
-Contributions are welcome! Please follow these steps:
+## Roadmap
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- Add a reusable `ProtectedRoute` and `AdminRoute` on the frontend.
+- Replace browser alerts with a shared accessible notification component.
+- Add pagination, filtering, and sorting to product and admin tables.
+- Introduce persistent order status history and inventory tracking.
+- Add Docker Compose for MySQL, backend, and frontend development.
+- Add CI checks for frontend lint/build and backend tests.
 
----
+## License
 
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👨‍💻 Author
-
-**Your Name**  
-- GitHub: [@sandeepkrmehta](https://github.com/sandeepkrmehta)
-- LinkedIn: [Your Profile](https://linkedin.com/in/sandeep-kumar-mehta)
-- Email: sandeepmehta.tech@zohomail.in
-
----
-
-## 🙏 Acknowledgments
-
-- [Spring Boot Documentation](https://spring.io/projects/spring-boot)
-- [React Documentation](https://react.dev/)
-- [Razorpay API Documentation](https://razorpay.com/docs/)
-- [Bootstrap Icons](https://icons.getbootstrap.com/)
-
----
-
-## 📞 Support
-
-If you encounter any issues or have questions, please:
-- Open an issue on [GitHub Issues](https://github.com/sandeepkrmehta/sales-savvy/issues)
-- Contact: sandeepmehta.tech@zohomail.in
----
-
-⭐ **If you found this project helpful, please give it a star!** ⭐
+This repository is currently a portfolio project. Add a license file before distributing it as reusable software.

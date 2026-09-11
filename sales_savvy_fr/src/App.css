@@ -184,6 +184,25 @@ body {
   margin-top: 1rem;
 }
 
+/* Shared visual language for the storefront. */
+body { color: #19231f; background: #f4f7f3; }
+.navbar.bg-dark { background: #17221d !important; }
+.navbar-brand { letter-spacing: -.03em; }
+.main-content, main.flex-fill { background: #f4f7f3 !important; }
+.hero { min-height: 560px !important; background-color: #23362c !important; }
+.hero h1 { max-width: 760px; font-size: clamp(3rem, 7vw, 6.5rem); letter-spacing: -.05em; line-height: .98; }
+.hero .lead { max-width: 520px; color: rgba(255,255,255,.82); }
+.hero .btn-primary, .btn-primary { border: 0; background: #cce96b; color: #17221d; font-weight: 700; }
+.hero .btn-primary:hover, .btn-primary:hover { background: #e0fa91; color: #17221d; }
+.card { border: 1px solid #dfe7df !important; border-radius: 18px !important; box-shadow: 0 12px 40px rgba(26, 52, 36, .08) !important; }
+.card-img-top { object-fit: cover; }
+.product-card { transition: transform .2s ease, box-shadow .2s ease; }
+.product-card:hover { transform: translateY(-4px); box-shadow: 0 18px 44px rgba(26, 52, 36, .14) !important; }
+.auth-container { min-height: 70vh; }
+.auth-form { border: 1px solid #dfe7df; border-radius: 18px; background: #fff; box-shadow: 0 18px 60px rgba(26,52,36,.1); }
+.footer { background: #17221d !important; }
+@media (max-width: 576px) { .hero { min-height: 500px !important; } .hero h1 { font-size: clamp(2.8rem, 14vw, 4.5rem); } }
+
 
 /* Cart Styles */
 .cart-page {

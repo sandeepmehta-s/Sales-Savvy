@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { cartService } from '../services/cart'
 import { paymentService } from '../services/payment'
@@ -6,6 +7,7 @@ import Loading from '../components/common/Loading'
 
 const Cart = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [cart, setCart] = useState(null)
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
@@ -53,7 +55,7 @@ const Cart = () => {
     setCheckoutLoading(true)
     try {
       const totalAmount = Math.round(cart.totalPrice * 100)
-      const orderResponse = await paymentService.createOrder(totalAmount)
+      const orderResponse = await paymentService.createOrder(totalAmount, user.username)
       await loadRazorpayScript()
 
       const options = {
@@ -78,14 +80,16 @@ const Cart = () => {
   }
 
   const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      if (window.Razorpay) {
+        resolve()
+        return
+      }
       const script = document.createElement('script')
       script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+      script.async = true
       script.onload = resolve
-      script.onerror = () => {
-        alert('Failed to load payment gateway.')
-        setCheckoutLoading(false)
-      }
+      script.onerror = () => reject(new Error('Failed to load payment gateway'))
       document.body.appendChild(script)
     })
   }
@@ -103,7 +107,7 @@ const Cart = () => {
       if (verification.status === 'success') {
         await cartService.clearCart(user.username)
         alert('Payment successful! Order placed.')
-        window.location.href = '/orders'
+        navigate('/orders')
       } else {
         alert('Payment verification failed.')
       }
@@ -126,9 +130,9 @@ const Cart = () => {
       {!cart?.items?.length ? (
         <div className="text-center mt-5">
           <h4 className="text-muted">Your cart is empty</h4>
-          <a href="/products" className="btn btn-primary mt-3">
+          <Link to="/products" className="btn btn-primary mt-3">
             <i className="bi bi-bag"></i> Continue Shopping
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="row">

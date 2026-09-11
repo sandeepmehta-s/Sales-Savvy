@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }) => {
       username: userData.username,
       email: userData.email,
       password: userData.password,
-      role: userData.role || 'ROLE_CUSTOMER',
+      role: 'ROLE_CUSTOMER',
       gender: userData.gender || null,
       dob: userData.dob || null,
     };

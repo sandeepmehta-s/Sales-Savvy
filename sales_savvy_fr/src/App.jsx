@@ -18,7 +18,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
-// import './App.css'
+import './App.css'
 
 // Scroll to top on route change
 import { useEffect } from 'react'

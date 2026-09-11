@@ -1,16 +1,25 @@
 package com.salesSavvy.controller;
 
-import com.salesSavvy.dto.UserResponse;
-import com.salesSavvy.entity.Users;
-import com.salesSavvy.security.JwtUtil;
-import com.salesSavvy.service.UsersService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.salesSavvy.dto.UserResponse;
+import com.salesSavvy.entity.Users;
+import com.salesSavvy.service.UsersService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/users")
@@ -18,11 +27,9 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UsersService usersService;
-    private final JwtUtil jwtUtil;
 
-    public UserController(UsersService usersService, JwtUtil jwtUtil) {
+    public UserController(UsersService usersService) {
         this.usersService = usersService;
-        this.jwtUtil = jwtUtil;
     }
 
     @GetMapping
@@ -43,7 +50,10 @@ public class UserController {
     }
 
     @GetMapping("/{username}")
-    public ResponseEntity<UserResponse> getUserByUsername(@PathVariable String username) {
+    public ResponseEntity<UserResponse> getUserByUsername(@PathVariable String username, Principal principal) {
+        if (!principal.getName().equals(username)) {
+            return ResponseEntity.status(403).build();
+        }
         Users user = usersService.getUser(username);
         UserResponse response = new UserResponse(
             user.getId(),
@@ -72,8 +82,8 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<UserResponse> getCurrentUserProfile(@RequestHeader("Authorization") String token) {
-        String username = extractUsernameFromToken(token);
+    public ResponseEntity<UserResponse> getCurrentUserProfile(Principal principal) {
+        String username = principal.getName();
         Users user = usersService.getUser(username);
         UserResponse response = new UserResponse(
             user.getId(),
@@ -86,12 +96,4 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    private String extractUsernameFromToken(String token) {
-        // Remove "Bearer " prefix
-        if (token != null && token.startsWith("Bearer ")) {
-            String jwt = token.substring(7);
-            return jwtUtil.extractUsername(jwt);
-        }
-        throw new RuntimeException("Invalid token format");
-    }
 }

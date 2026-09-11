@@ -38,7 +38,11 @@ public class CartController {
     public ResponseEntity<String> updateCartItem(
             @RequestParam String username,
             @RequestParam Long productId,
-            @RequestParam int quantity) {
+            @RequestParam int quantity,
+            Principal principal) {
+        if (!principal.getName().equals(username)) {
+            return ResponseEntity.status(403).build();
+        }
         cartService.updateCartItem(username, productId, quantity);
         return ResponseEntity.ok("Cart updated successfully");
     }
@@ -46,19 +50,29 @@ public class CartController {
     @DeleteMapping("/remove")
     public ResponseEntity<String> removeFromCart(
             @RequestParam String username,
-            @RequestParam Long productId) {
+            @RequestParam Long productId,
+            Principal principal) {
+        if (!principal.getName().equals(username)) {
+            return ResponseEntity.status(403).build();
+        }
         cartService.removeFromCart(username, productId);
         return ResponseEntity.ok("Product removed from cart successfully");
     }
 
     @DeleteMapping("/clear")
-    public ResponseEntity<String> clearCart(@RequestParam String username) {
+    public ResponseEntity<String> clearCart(@RequestParam String username, Principal principal) {
+        if (!principal.getName().equals(username)) {
+            return ResponseEntity.status(403).build();
+        }
         cartService.clearCart(username);
         return ResponseEntity.ok("Cart cleared successfully");
     }
 
     @GetMapping("/items")
-    public ResponseEntity<CartResponse> getCartItems(@RequestParam String username) {
+    public ResponseEntity<CartResponse> getCartItems(@RequestParam String username, Principal principal) {
+        if (!principal.getName().equals(username)) {
+            return ResponseEntity.status(403).build();
+        }
         Cart cart = cartService.getCartByUsername(username);
         List<CartItem> cartItems = cartService.getCartItems(username);
 
@@ -83,13 +97,19 @@ public class CartController {
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Integer> getCartItemCount(@RequestParam String username) {
+    public ResponseEntity<Integer> getCartItemCount(@RequestParam String username, Principal principal) {
+        if (!principal.getName().equals(username)) {
+            return ResponseEntity.status(403).build();
+        }
         Integer count = cartService.getCartItemCount(username);
         return ResponseEntity.ok(count);
     }
 
     @GetMapping("/total")
-    public ResponseEntity<Double> getCartTotalValue(@RequestParam String username) {
+    public ResponseEntity<Double> getCartTotalValue(@RequestParam String username, Principal principal) {
+        if (!principal.getName().equals(username)) {
+            return ResponseEntity.status(403).build();
+        }
         Double total = cartService.getCartTotalValue(username).doubleValue();
         return ResponseEntity.ok(total);
     }

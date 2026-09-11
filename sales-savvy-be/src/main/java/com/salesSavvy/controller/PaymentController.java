@@ -1,19 +1,25 @@
 package com.salesSavvy.controller;
 
-import com.salesSavvy.dto.PaymentRequest;
-import com.salesSavvy.dto.PaymentVerifyRequest;
-import com.salesSavvy.entity.Orders;
-import com.salesSavvy.service.PaymentService;
-import com.salesSavvy.service.OrderService;
-import com.razorpay.Order;
-import com.razorpay.RazorpayException;
-import org.json.JSONObject;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.json.JSONObject;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.razorpay.Order;
+import com.razorpay.RazorpayException;
+import com.salesSavvy.dto.PaymentRequest;
+import com.salesSavvy.dto.PaymentVerifyRequest;
+import com.salesSavvy.entity.Orders;
+import com.salesSavvy.service.OrderService;
+import com.salesSavvy.service.PaymentService;
 
 @RestController
 @RequestMapping("/payment")
@@ -29,8 +35,11 @@ public class PaymentController {
     }
 
     @PostMapping("/create-order")
-    public ResponseEntity<Map<String, Object>> createOrder(@RequestBody PaymentRequest paymentRequest) {
+    public ResponseEntity<Map<String, Object>> createOrder(@RequestBody PaymentRequest paymentRequest, Principal principal) {
         try {
+            if (principal == null || !principal.getName().equals(paymentRequest.getUsername())) {
+                return ResponseEntity.status(403).build();
+            }
             Order razorpayOrder = paymentService.createRazorpayOrder(paymentRequest.getAmount());
 
             JSONObject orderJson = new JSONObject(razorpayOrder.toString());
@@ -88,7 +97,7 @@ public class PaymentController {
 
             // ✅ 2. Get username
             System.out.println("=== STEP 3: Getting username ===");
-            String username = "sandeep"; // Force username for testing
+            String username = principal.getName();
             System.out.println("Using username: " + username);
 
             // ✅ 3. Create Order from Cart

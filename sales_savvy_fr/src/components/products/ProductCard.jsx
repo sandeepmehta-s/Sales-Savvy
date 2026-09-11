@@ -21,8 +21,7 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="col-md-4 col-sm-6 mb-4">
-      <div className="card h-100 shadow-sm border-0">
+    <div className="card product-card h-100 shadow-sm border-0">
         <Link to={`/products/${product.id}`} className="text-decoration-none text-dark">
           <img
             src={product.photo || '/placeholder-image.jpg'}
@@ -53,7 +52,6 @@ const ProductCard = ({ product }) => {
             {user ? 'Add to Cart' : 'Login to Add'}
           </button>
         </div>
-      </div>
     </div>
   );
 };
