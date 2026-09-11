@@ -7,6 +7,11 @@ import java.util.Optional;
 
 public interface OrderService {
     Orders createOrderFromCart(String username, String razorpayOrderId, BigDecimal amount);
+
+    // Bug Fix #3: Atomic method — create order + mark paid in one transaction
+    Orders createOrderAndMarkPaid(String username, String razorpayOrderId,
+                                   BigDecimal amount, String paymentId);
+
     Orders placeOrder(Orders order);
     List<Orders> getAllOrders();
     List<Orders> getOrdersByUserId(Long userId);
@@ -17,4 +22,7 @@ public interface OrderService {
     String updateOrderStatus(String razorpayOrderId, String status);
     void updatePaymentDetails(String razorpayOrderId, String paymentId, String status);
     BigDecimal getTotalSales();
+
+    // Bug Fix #2: Returns actual count of PAID orders (not amount sum)
+    long getTotalOrderCount();
 }

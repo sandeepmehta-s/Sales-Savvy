@@ -13,4 +13,6 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
     Optional<Orders> findByPaymentId(String paymentId);
     List<Orders> findAllByOrderByCreatedAtDesc();
     Long countByUserId(Long userId);
+    // Bug Fix #2: Count orders by status (used for total order count on dashboard)
+    long countByStatus(String status);
 }

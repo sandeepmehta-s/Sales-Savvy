@@ -129,10 +129,13 @@ public class CartServiceImplementation implements CartService {
     @Override
     @Transactional(readOnly = true)
     public List<CartItem> getCartItems(String username) {
-        Cart cart = cartRepository.findByUserUsername(username)
-            .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user: " + username));
-
-        return cartItemRepository.findByCart(cart);
+        // Bug Fix #4: Return empty list if cart doesn't exist yet (instead of throwing exception)
+        // createOrderFromCart already checks for empty cart and throws a clear error message
+        Optional<Cart> cartOpt = cartRepository.findByUserUsername(username);
+        if (cartOpt.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return cartItemRepository.findByCart(cartOpt.get());
     }
 
     @Override

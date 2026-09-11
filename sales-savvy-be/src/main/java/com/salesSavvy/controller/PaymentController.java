@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.json.JSONObject;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,7 +22,6 @@ import com.salesSavvy.service.PaymentService;
 
 @RestController
 @RequestMapping("/payment")
-@CrossOrigin(origins = "http://localhost:5173")
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -104,32 +102,23 @@ public class PaymentController {
             System.out.println("=== STEP 4: Creating order from cart ===");
             System.out.println("Calling orderService.createOrderFromCart...");
             
-            Orders createdOrder = orderService.createOrderFromCart(
+            // Bug Fix #3: Single atomic call — creates order AND marks PAID in one transaction
+            // Previously two separate calls could leave order in CREATED state if second call failed
+            Orders createdOrder = orderService.createOrderAndMarkPaid(
                     username,
                     verifyRequest.getOrderId(),
-                    verifyRequest.getAmount()
-            );
-            
-            System.out.println("✅ Order created successfully with ID: " + createdOrder.getId());
-
-            // ✅ 4. Update Order Payment Details
-            System.out.println("=== STEP 5: Updating payment details ===");
-            orderService.updatePaymentDetails(
-                    verifyRequest.getOrderId(),
-                    verifyRequest.getPaymentId(),
-                    "PAID"
+                    verifyRequest.getAmount(),
+                    verifyRequest.getPaymentId()
             );
 
-//            System.out.println("✅ Payment details updated successfully");
+            System.out.println("✅ Order created and marked PAID with ID: " + createdOrder.getId());
 
             // ✅ 5. Send success response
-//            System.out.println("=== STEP 6: Sending success response ===");
             response.put("status", "success");
             response.put("message", "Payment verified and order created successfully");
             response.put("orderId", createdOrder.getId());
             response.put("amount", createdOrder.getAmount());
             
-//            System.out.println("🎉 PAYMENT VERIFICATION COMPLETED SUCCESSFULLY");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {

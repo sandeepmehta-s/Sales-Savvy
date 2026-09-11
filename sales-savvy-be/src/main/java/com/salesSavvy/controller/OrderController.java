@@ -1,21 +1,27 @@
 package com.salesSavvy.controller;
 
-import com.salesSavvy.dto.OrderResponse;
-import com.salesSavvy.dto.OrderItemResponse;
-import com.salesSavvy.entity.Orders;
-import com.salesSavvy.entity.OrderItem;
-import com.salesSavvy.service.OrderService;
+import java.security.Principal;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.security.Principal;
-import java.util.stream.Collectors;
+import com.salesSavvy.dto.OrderItemResponse;
+import com.salesSavvy.dto.OrderResponse;
+import com.salesSavvy.entity.OrderItem;
+import com.salesSavvy.entity.Orders;
+import com.salesSavvy.service.OrderService;
 
 @RestController
 @RequestMapping("/orders")
-@CrossOrigin(origins = "http://localhost:5173")
 public class OrderController {
 
     private final OrderService orderService;
@@ -96,6 +102,14 @@ public class OrderController {
     public ResponseEntity<Double> getTotalSales() {
         Double totalSales = orderService.getTotalSales().doubleValue();
         return ResponseEntity.ok(totalSales);
+    }
+
+    // Bug Fix #2: Separate endpoint for PAID orders count (distinct from total revenue)
+    @GetMapping("/sales/count")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Long> getTotalOrderCount() {
+        long count = orderService.getTotalOrderCount();
+        return ResponseEntity.ok(count);
     }
 
     private OrderResponse convertToOrderResponse(Orders order) {

@@ -1,10 +1,5 @@
 package com.salesSavvy.controller;
 
-import com.salesSavvy.dto.AuthResponse;
-import com.salesSavvy.entity.UserLoginData;
-import com.salesSavvy.entity.Users;
-import com.salesSavvy.security.JwtUtil;
-import com.salesSavvy.service.UsersService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,13 +7,22 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.salesSavvy.dto.AuthResponse;
+import com.salesSavvy.entity.UserLoginData;
+import com.salesSavvy.entity.Users;
+import com.salesSavvy.security.JwtUtil;
+import com.salesSavvy.service.UsersService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;

@@ -32,6 +32,16 @@ public class Product {
     @NotBlank(message = "Category cannot be blank")
     private String category;
 
+    // Bug Fix #1: Stock quantity tracking — prevents overselling on concurrent orders
+    @Min(value = 0, message = "Stock quantity cannot be negative")
+    @Column(name = "stock_quantity", nullable = false)
+    private int stockQuantity = 0;
+
+    // Bug Fix #1: Optimistic locking — prevents race condition when 2 users order same item simultaneously
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     @ElementCollection
     @CollectionTable(name = "product_reviews", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "review")
@@ -65,6 +75,28 @@ public class Product {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
+    public int getStockQuantity() { return stockQuantity; }
+    public void setStockQuantity(int stockQuantity) { this.stockQuantity = stockQuantity; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
+
     public List<String> getReviews() { return reviews; }
     public void setReviews(List<String> reviews) { this.reviews = reviews; }
+
+    // Helper: check if enough stock available
+    public boolean hasStock(int requiredQuantity) {
+        return this.stockQuantity >= requiredQuantity;
+    }
+
+    // Helper: deduct stock (call inside transaction)
+    public void deductStock(int quantity) {
+        if (!hasStock(quantity)) {
+            throw new IllegalStateException(
+                "Insufficient stock for product: " + this.name +
+                ". Available: " + this.stockQuantity + ", Required: " + quantity
+            );
+        }
+        this.stockQuantity -= quantity;
+    }
 }

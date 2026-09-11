@@ -43,6 +43,17 @@ public class OrderServiceImpl implements OrderService {
             throw new IllegalArgumentException("Cannot create order: Cart is empty");
         }
 
+        // Bug Fix #1: Check stock availability before creating order
+        for (CartItem cartItem : cartItems) {
+            if (!cartItem.getProduct().hasStock(cartItem.getQuantity())) {
+                throw new IllegalStateException(
+                    "Insufficient stock for product: " + cartItem.getProduct().getName() +
+                    ". Available: " + cartItem.getProduct().getStockQuantity() +
+                    ", Requested: " + cartItem.getQuantity()
+                );
+            }
+        }
+
         // Create order
         Orders order = new Orders();
         order.setRazorpayOrderId(razorpayOrderId);
@@ -52,8 +63,9 @@ public class OrderServiceImpl implements OrderService {
         order.setUser(user);
         order.setReceipt("rcpt_" + System.currentTimeMillis());
 
-        // Convert cart items to order items
+        // Bug Fix #1: Deduct stock atomically while converting cart items to order items
         for (CartItem cartItem : cartItems) {
+            cartItem.getProduct().deductStock(cartItem.getQuantity()); // deducts + validates
             OrderItem orderItem = new OrderItem(order, cartItem.getProduct(), cartItem.getQuantity());
             order.addItem(orderItem);
         }
@@ -64,6 +76,18 @@ public class OrderServiceImpl implements OrderService {
         cartService.clearCart(username);
 
         return savedOrder;
+    }
+
+    // Bug Fix #3: Atomic method — creates order AND marks it PAID in one transaction
+    // Prevents partial state where order is created but payment status never updated
+    @Override
+    @Transactional
+    public Orders createOrderAndMarkPaid(String username, String razorpayOrderId,
+                                         BigDecimal amount, String paymentId) {
+        Orders order = createOrderFromCart(username, razorpayOrderId, amount);
+        order.setPaymentId(paymentId);
+        order.setStatus("PAID");
+        return orderRepository.save(order);
     }
 
     @Override
@@ -161,6 +185,13 @@ public class OrderServiceImpl implements OrderService {
             .map(Orders::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add)
             .divide(BigDecimal.valueOf(100)); // Convert from paise to rupees
+    }
+
+    // Bug Fix #2: Total order count — returns number of PAID orders, not amount sum
+    @Override
+    @Transactional(readOnly = true)
+    public long getTotalOrderCount() {
+        return orderRepository.countByStatus("PAID");
     }
 
     private boolean isValidStatus(String status) {
