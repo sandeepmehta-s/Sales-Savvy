@@ -23,8 +23,9 @@ const AdminDashboard = () => {
   return (
     <div className="container py-5">
       {/* Header Section */}
-      <div className="text-center mb-5">
-        <h1 className="fw-bold text-primary">Admin Dashboard</h1>
+      <div className="text-center mb-5 admin-dashboard-heading">
+        <span className="eyebrow">Control room</span>
+        <h1 className="fw-bold">Admin Dashboard</h1>
         <p className="text-muted">Manage your store’s operations and data efficiently</p>
       </div>
 
@@ -57,7 +58,7 @@ const AdminDashboard = () => {
       </ul>
 
       {/* Tab Content */}
-      <div className="card border-0 shadow-sm p-4">
+      <div className="admin-tab-panel">
         {activeTab === 'products' && <AdminProducts />}
         {activeTab === 'users' && <AdminUsers />}
         {activeTab === 'orders' && <AdminOrders />}

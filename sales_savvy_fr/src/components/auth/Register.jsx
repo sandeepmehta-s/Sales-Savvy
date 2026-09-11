@@ -1,164 +1,29 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    gender: '',
-    dob: '',
-    role: 'ROLE_CUSTOMER'
-  });
+  const [formData, setFormData] = useState({ username: '', email: '', password: '', gender: '', dob: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
     setError('');
-
-    if (!formData.username || !formData.email || !formData.password) {
-      setError('Username, email, and password are required');
-      setLoading(false);
-      return;
-    }
-
     try {
       await register(formData);
-      navigate('/login', { state: { message: 'Registration successful! Please login.' } });
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      navigate('/login', { state: { message: 'Account created. Sign in to continue.' } });
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Registration failed. Please check your details.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  return (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="card shadow-lg p-4" style={{ width: '100%', maxWidth: '450px' }}>
-        <h3 className="text-center mb-4">Create Your Account</h3>
-
-        {error && (
-          <div className="alert alert-danger text-center py-2" role="alert">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          {/* Username */}
-          <div className="mb-3">
-            <label className="form-label">Username *</label>
-            <input
-              type="text"
-              name="username"
-              className="form-control"
-              placeholder="Enter username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {/* Email */}
-          <div className="mb-3">
-            <label className="form-label">Email *</label>
-            <input
-              type="email"
-              name="email"
-              className="form-control"
-              placeholder="Enter email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {/* Password */}
-          <div className="mb-3">
-            <label className="form-label">Password *</label>
-            <input
-              type="password"
-              name="password"
-              className="form-control"
-              placeholder="Enter password (min 8 characters)"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              disabled={loading}
-              minLength="8"
-            />
-          </div>
-
-          {/* Gender */}
-          <div className="mb-3">
-            <label className="form-label">Gender</label>
-            <select
-              name="gender"
-              className="form-select"
-              value={formData.gender}
-              onChange={handleChange}
-              disabled={loading}
-            >
-              <option value="">Select Gender</option>
-              <option value="MALE">Male</option>
-              <option value="FEMALE">Female</option>
-              <option value="OTHER">Other</option>
-            </select>
-          </div>
-
-          {/* Date of Birth */}
-          <div className="mb-3">
-            <label className="form-label">Date of Birth</label>
-            <input
-              type="date"
-              name="dob"
-              className="form-control"
-              value={formData.dob}
-              onChange={handleChange}
-              disabled={loading}
-            />
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-success w-100 mt-2"
-          >
-            {loading ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm me-2"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                Creating Account...
-              </>
-            ) : (
-              'Create Account'
-            )}
-          </button>
-        </form>
-
-        <p className="text-center mt-3 mb-0">
-          Already have an account?{' '}
-          <Link to="/login" className="text-decoration-none">
-            Login here
-          </Link>
-        </p>
-      </div>
-    </div>
-  );
+  return <section className="auth-layout auth-layout-reverse"><div className="auth-aside"><span className="auth-kicker">SalesSavvy / 02</span><h1>Make room for<br /><em>better finds.</em></h1><p>Join a store built around discovery, confidence, and less noise.</p></div><div className="auth-panel"><div className="auth-panel-heading"><span className="eyebrow">Create your account</span><h2>Start shopping</h2><p>A few details and your next favourite product is closer.</p></div>{error && <div className="error" role="alert">{error}</div>}<form onSubmit={handleSubmit} className="auth-form-modern"><div className="form-two-col"><label>Username<input name="username" maxLength="50" value={formData.username} onChange={(event) => setFormData({ ...formData, username: event.target.value })} required disabled={loading} /></label><label>Email<input type="email" name="email" autoComplete="email" value={formData.email} onChange={(event) => setFormData({ ...formData, email: event.target.value })} required disabled={loading} /></label></div><label>Password<input type="password" name="password" minLength="8" autoComplete="new-password" value={formData.password} onChange={(event) => setFormData({ ...formData, password: event.target.value })} required disabled={loading} /></label><div className="form-two-col"><label>Gender<select name="gender" value={formData.gender} onChange={(event) => setFormData({ ...formData, gender: event.target.value })} disabled={loading}><option value="">Prefer not to say</option><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option></select></label><label>Date of birth<input type="date" name="dob" value={formData.dob} onChange={(event) => setFormData({ ...formData, dob: event.target.value })} disabled={loading} /></label></div><button className="btn btn-primary btn-lg" type="submit" disabled={loading}>{loading ? 'Creating account...' : 'Create account'}</button></form><p className="auth-footnote">Already have an account? <Link to="/login">Sign in</Link></p></div></section>;
 };
 
 export default Register;

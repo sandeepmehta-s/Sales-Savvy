@@ -42,8 +42,7 @@ function App() {
           <Header />
 
           {/* Main Content */}
-          <main className="flex-fill bg-light py-4">
-            <div className="container">
+          <main className="flex-fill app-main">
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Home />} />
@@ -59,7 +58,6 @@ function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
               </Routes>
-            </div>
           </main>
 
           {/* Footer */}

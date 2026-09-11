@@ -27,17 +27,13 @@ const ProductCard = ({ product }) => {
             src={product.photo || '/placeholder-image.jpg'}
             alt={product.name}
             className="card-img-top"
-            style={{
-              height: '220px',
-              objectFit: 'cover',
-              borderTopLeftRadius: '0.5rem',
-              borderTopRightRadius: '0.5rem',
-            }}
+            loading="lazy"
           />
           <div className="card-body">
-            <h5 className="card-title text-truncate">{product.name}</h5>
+            <p className="product-category mb-2">{product.category || 'Featured product'}</p>
+            <h5 className="card-title mb-2">{product.name}</h5>
             <p className="card-text text-muted mb-1">
-              Category: <strong>{product.category}</strong>
+              {product.description || 'Made for everyday moments.'}
             </p>
             <h6 className="text-primary fw-bold">₹{product.price}</h6>
           </div>

@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import API from '../../services/api';
-import { Spinner } from 'react-bootstrap'; // Optional if you’ve installed react-bootstrap
 
 const ProductDetail = () => {
   const { id } = useParams();

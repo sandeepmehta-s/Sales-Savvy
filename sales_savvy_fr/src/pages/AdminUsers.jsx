@@ -1,164 +1,36 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '../context/AuthContext'
-import { userService } from '../services/user'
-import Loading from '../components/common/Loading'
+import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { userService } from '../services/user';
+import Loading from '../components/common/Loading';
 
 const AdminUsers = () => {
-  const { user } = useAuth()
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { user } = useAuth();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user && user.role === 'ROLE_ADMIN') {
-      loadUsers()
+    if (user?.role === 'ROLE_ADMIN') {
+      userService.getAllUsers().then(setUsers).catch(() => setError('Failed to load users.')).finally(() => setLoading(false));
     }
-  }, [user])
-
-  const loadUsers = async () => {
-    try {
-      const data = await userService.getAllUsers()
-      setUsers(data)
-    } catch (err) {
-      setError('Failed to load users')
-      console.error('Error loading users:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [user]);
 
   const handleDeleteUser = async (userId, username) => {
-    if (!window.confirm(`Are you sure you want to delete user: ${username}?`)) return
+    if (username === 'admin' || !window.confirm(`Delete user ${username}?`)) return;
     try {
-      await userService.deleteUser(userId)
-      alert('User deleted successfully')
-      loadUsers()
-    } catch (error) {
-      alert('Failed to delete user')
-      console.error('Error deleting user:', error)
+      await userService.deleteUser(userId);
+      setUsers((currentUsers) => currentUsers.filter((item) => item.id !== userId));
+    } catch {
+      setError('Failed to delete user.');
     }
-  }
+  };
 
-  if (!user || user.role !== 'ROLE_ADMIN') {
-    return (
-      <div className="text-center mt-5">
-        <h2 className="text-danger">Access Denied</h2>
-        <p>You need administrator privileges to access this page.</p>
-      </div>
-    )
-  }
+  if (!user || user.role !== 'ROLE_ADMIN') return <div className="access-state"><span className="eyebrow">Restricted</span><h2>Admin access required.</h2><p>This area is only available to store administrators.</p></div>;
+  if (loading) return <Loading />;
+  if (error) return <div className="error-page"><span className="eyebrow">Something went wrong</span><h2>{error}</h2></div>;
 
-  if (loading) return <Loading />
-  if (error) return <div className="alert alert-danger text-center mt-3">{error}</div>
-
-  return (
-    <div className="container py-4">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h2 className="fw-bold">User Management</h2>
-          <p className="text-muted mb-0">Manage all users in the system</p>
-        </div>
-        <button className="btn btn-primary">
-          <i className="bi bi-person-plus"></i> Add User
-        </button>
-      </div>
-
-      {/* Table */}
-      <div className="table-responsive shadow-sm rounded">
-        <table className="table table-hover align-middle">
-          <thead className="table-dark">
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Username</th>
-              <th scope="col">Email</th>
-              <th scope="col">Role</th>
-              <th scope="col">Gender</th>
-              <th scope="col">DOB</th>
-              <th scope="col" className="text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(u => (
-              <tr key={u.id}>
-                <td>{u.id}</td>
-                <td>{u.username}</td>
-                <td>{u.email}</td>
-                <td>
-                  <span
-                    className={`badge ${
-                      u.role === 'ROLE_ADMIN'
-                        ? 'bg-danger'
-                        : 'bg-success'
-                    }`}
-                  >
-                    {u.role?.replace('ROLE_', '')}
-                  </span>
-                </td>
-                <td>{u.gender || '-'}</td>
-                <td>{u.dob || '-'}</td>
-                <td className="text-center">
-                  <div className="btn-group">
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => {/* TODO: Add Edit User */}}
-                    >
-                      <i className="bi bi-pencil-square"></i> Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleDeleteUser(u.id, u.username)}
-                      disabled={u.username === 'admin'}
-                    >
-                      <i className="bi bi-trash"></i> Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {users.length === 0 && (
-          <div className="text-center text-muted py-3">
-            <p>No users found.</p>
-          </div>
-        )}
-      </div>
-
-      {/* Stats Section */}
-      <div className="row mt-5">
-        <div className="col-md-4 mb-3">
-          <div className="card text-center shadow-sm border-0">
-            <div className="card-body">
-              <h5 className="card-title text-secondary">Total Users</h5>
-              <h2 className="fw-bold text-dark">{users.length}</h2>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4 mb-3">
-          <div className="card text-center shadow-sm border-0">
-            <div className="card-body">
-              <h5 className="card-title text-danger">Admins</h5>
-              <h2 className="fw-bold">
-                {users.filter(u => u.role === 'ROLE_ADMIN').length}
-              </h2>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4 mb-3">
-          <div className="card text-center shadow-sm border-0">
-            <div className="card-body">
-              <h5 className="card-title text-success">Customers</h5>
-              <h2 className="fw-bold">
-                {users.filter(u => u.role === 'ROLE_CUSTOMER').length}
-              </h2>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+  const admins = users.filter((item) => item.role === 'ROLE_ADMIN').length;
+  return <section className="admin-page"><div className="admin-page-heading"><div><span className="eyebrow">People / Directory</span><h1>User management</h1><p>Keep an eye on the people using your storefront.</p></div><div className="admin-stat"><strong>{users.length}</strong><span>Total accounts</span></div></div><div className="admin-stat-row"><div><strong>{users.length}</strong><span>All users</span></div><div><strong>{admins}</strong><span>Administrators</span></div><div><strong>{users.length - admins}</strong><span>Customers</span></div></div>{users.length === 0 ? <div className="empty-state">No users found.</div> : <div className="user-card-grid">{users.map((item) => <article className="user-card" key={item.id}><div className="user-avatar">{item.username?.slice(0, 1).toUpperCase()}</div><div className="user-card-main"><div className="user-card-title"><h3>{item.username}</h3><span className={`role-pill ${item.role === 'ROLE_ADMIN' ? 'role-admin' : ''}`}>{item.role?.replace('ROLE_', '')}</span></div><p>{item.email}</p><dl><div><dt>Gender</dt><dd>{item.gender || 'Not set'}</dd></div><div><dt>Date of birth</dt><dd>{item.dob || 'Not set'}</dd></div></dl></div><button className="icon-delete" type="button" onClick={() => handleDeleteUser(item.id, item.username)} disabled={item.username === 'admin'} aria-label={`Delete ${item.username}`}><i className="bi bi-trash3" /></button></article>)}</div>}</section>;
+};
 
 export default AdminUsers;

@@ -6,11 +6,13 @@ const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/');
     setExpanded(false);
+    setUserMenuOpen(false);
   };
 
   const closeNavbar = () => setExpanded(false);
@@ -19,8 +21,9 @@ const Header = () => {
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
       <div className="container">
         {/* Logo */}
-        <Link className="navbar-brand fw-bold fs-4" to="/" onClick={closeNavbar}>
-          SalesSavvy
+        <Link className="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" to="/" onClick={closeNavbar}>
+          <span className="brand-mark">S</span>
+          <span>SalesSavvy</span>
         </Link>
 
         {/* Toggler for mobile */}
@@ -71,7 +74,7 @@ const Header = () => {
                 {user.role === 'ROLE_ADMIN' && (
                   <li className="nav-item">
                     <Link
-                      className="nav-link text-warning fw-semibold"
+                      className="nav-link admin-link fw-semibold"
                       to="/admin"
                       onClick={closeNavbar}
                     >
@@ -85,12 +88,12 @@ const Header = () => {
                   <button
                     className="btn btn-sm btn-outline-light dropdown-toggle ms-2"
                     type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
+                    aria-expanded={userMenuOpen}
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
                   >
                     Hello, {user.username}
                   </button>
-                  <ul className="dropdown-menu dropdown-menu-end">
+                  <ul className={`dropdown-menu dropdown-menu-end ${userMenuOpen ? 'show' : ''}`}>
                     <li>
                       <button className="dropdown-item" onClick={handleLogout}>
                         <i className="bi bi-box-arrow-right me-2"></i>Logout
