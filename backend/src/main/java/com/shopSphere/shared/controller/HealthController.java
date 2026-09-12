@@ -14,3 +14,4 @@ public class HealthController {
         return ResponseEntity.ok("Backend is healthy and running!");
     }
 }
+
