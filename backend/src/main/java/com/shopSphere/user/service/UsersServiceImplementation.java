@@ -30,6 +30,7 @@ public class UsersServiceImplementation implements UsersService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void signUp(Users user) {
         String username = Objects.toString(user.getUsername(), "");
         String email    = Objects.toString(user.getEmail(), "");
@@ -70,6 +71,7 @@ public class UsersServiceImplementation implements UsersService {
     public List<Users> getAllUsers() { return usersRepository.findAll(); }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public String deleteUser(String id) {
         // Objects.requireNonNull narrows type to @NonNull — satisfies JDT checker for findById
         Users user = usersRepository.findById(Objects.requireNonNull(id)).orElse(null);

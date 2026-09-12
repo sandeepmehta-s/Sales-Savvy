@@ -19,7 +19,10 @@ public class Orders {
     private String id;
 
     @Indexed(unique = true)
-    private String stripePaymentIntentId;
+    private String stripePaymentIntentId; // to map Stripe payment to this order
+
+    @org.springframework.data.annotation.Version
+    private Long version;
 
     @NotNull(message = "Amount cannot be null")
     private BigDecimal amount;

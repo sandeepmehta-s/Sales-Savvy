@@ -15,6 +15,9 @@ public class Cart {
     @Indexed(unique = true)
     private String username;
 
+    @org.springframework.data.annotation.Version
+    private Long version;
+
     private List<CartItem> cartItems = new ArrayList<>();
 
     public Cart() {}

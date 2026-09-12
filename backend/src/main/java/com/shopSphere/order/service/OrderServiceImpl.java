@@ -31,6 +31,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public Orders createOrderFromCart(String username, String stripePaymentIntentId, BigDecimal amount) {
         List<CartItem> cartItems = cartService.getCartItems(username);
 

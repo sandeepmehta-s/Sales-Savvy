@@ -69,6 +69,7 @@ public class ProductServiceImplementation implements ProductService {
         if (product.getPhoto() != null) existing.setPhoto(product.getPhoto());
         if (product.getCategory() != null) existing.setCategory(product.getCategory());
         if (product.getReviews() != null) existing.setReviews(product.getReviews());
+        existing.setStockQuantity(product.getStockQuantity());
         productRepository.save(existing);
         return "Product updated successfully";
     }
