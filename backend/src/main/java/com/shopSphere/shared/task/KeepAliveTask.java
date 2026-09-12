@@ -23,8 +23,9 @@ public class KeepAliveTask {
             String url = selfUrl + "/health";
             String response = restTemplate.getForObject(url, String.class);
             logger.info("Keep-alive ping successful: {}", response);
-        } catch (Exception e) {
+        } catch (org.springframework.web.client.RestClientException e) {
             logger.error("Keep-alive ping failed: {}", e.getMessage());
         }
     }
 }
+
