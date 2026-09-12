@@ -12,8 +12,11 @@ import java.util.List;
 @Configuration
 public class WebConfig {
 
-    @Value("${cors.allowed-origins:http://localhost:5173}")
-    private List<String> allowedOrigins = new java.util.ArrayList<>();
+    private final List<String> allowedOrigins;
+
+    public WebConfig(@Value("${cors.allowed-origins:http://localhost:5173}") List<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
+    }
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {
