@@ -9,7 +9,8 @@ import org.springframework.data.mongodb.MongoTransactionManager;
 public class MongoConfig {
 
     @Bean
-    public MongoTransactionManager transactionManager(@org.springframework.lang.NonNull MongoDatabaseFactory dbFactory) {
-        return new MongoTransactionManager(dbFactory);
+    public MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
+        return new MongoTransactionManager(java.util.Objects.requireNonNull(dbFactory, "dbFactory must not be null"));
     }
 }
+
