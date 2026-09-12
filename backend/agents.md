@@ -1,8 +1,8 @@
 # agents.md — ShopSphere Backend
 
-> Read this file before making any changes to the backend.
-> Update it after any significant architectural or structural change.
-> For full system docs and data flow, see the root `docs/` folder.
+> 🛑 **CRITICAL AI AGENT INSTRUCTION** 🛑
+> 1. **BEFORE making ANY changes:** You MUST read this `agents.md` file completely, and then read the specific feature documentation inside the `docs/` folder.
+> 2. **AFTER making ANY changes:** You MUST update the relevant files in the `docs/` folder to accurately reflect your new implementation or architectural changes.
 
 ---
 
@@ -92,3 +92,4 @@ Amounts are processed in **smallest currency units (e.g., paise for INR)**.
 | 2026-09-13 | Fixed JDT warnings (null-type safety, SecurityConfig deprecations, WebConfig) |
 | 2026-09-12 | Migrated from MySQL to MongoDB (IDs changed from Long to String) |
 | 2026-09-12 | Migrated payment gateway from Razorpay to Stripe |
+

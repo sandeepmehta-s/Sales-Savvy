@@ -2,9 +2,9 @@
 
 ## Agent Instructions
 
-> **Read this file before making any changes to the project.**
-> Always read the relevant file inside `docs/` before editing a feature.
-> Update the corresponding doc after completing any significant change.
+> 🛑 **CRITICAL AI AGENT INSTRUCTION** 🛑
+> 1. **BEFORE making ANY changes:** You MUST read this `AGENT.md` file completely, and then read the specific feature documentation inside the `docs/` folder.
+> 2. **AFTER making ANY changes:** You MUST update the relevant files in the `docs/` folder to accurately reflect your new implementation or architectural changes.
 
 ---
 

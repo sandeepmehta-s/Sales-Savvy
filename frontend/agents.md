@@ -1,8 +1,8 @@
 # agents.md — ShopSphere Frontend
 
-> Read this file before making any changes to the frontend.
-> Update it after any significant change.
-> For backend API docs, see the root `docs/` folder.
+> 🛑 **CRITICAL AI AGENT INSTRUCTION** 🛑
+> 1. **BEFORE making ANY changes:** You MUST read this `agents.md` file completely, and then read the specific feature documentation inside the `docs/` folder.
+> 2. **AFTER making ANY changes:** You MUST update the relevant files in the `docs/` folder to accurately reflect your new implementation or architectural changes.
 
 ---
 
