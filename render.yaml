@@ -10,8 +10,10 @@ services:
     rootDir: backend
     dockerfilePath: ./Dockerfile
     plan: free
-    healthCheckPath: /auth/test
+    healthCheckPath: /health
     envVars:
+      - key: SELF_URL
+        sync: false           # Set this to https://shopsphere-backend.onrender.com
       - key: MONGODB_URI
         sync: false           # MongoDB Atlas connection string
       - key: JWT_SECRET
