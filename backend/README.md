@@ -2,7 +2,7 @@
 
 The backend for **ShopSphere**, a full-stack e-commerce platform built with Spring Boot, MongoDB, and Stripe.
 
-## 🚀 Tech Stack
+##  Tech Stack
 
 - **Framework:** Spring Boot 3.5 (Java 17)
 - **Database:** MongoDB (using Spring Data MongoDB)
@@ -13,7 +13,7 @@ The backend for **ShopSphere**, a full-stack e-commerce platform built with Spri
 
 ---
 
-## 🛠️ Prerequisites
+## Prerequisites
 
 Before running the backend, ensure you have the following installed:
 - [Java 17 JDK](https://adoptium.net/)
@@ -23,7 +23,7 @@ Before running the backend, ensure you have the following installed:
 
 ---
 
-## ⚙️ Environment Configuration
+##  Environment Configuration
 
 1. Locate the `.env.example` file in the `backend/` directory.
 2. Copy it to create your local environment file:
@@ -43,7 +43,7 @@ Before running the backend, ensure you have the following installed:
 
 ---
 
-## 🏃‍♂️ Running the Application
+## ‍♂Running the Application
 
 ### Option 1: Using Maven (Local)
 
@@ -75,7 +75,7 @@ A production-ready `Dockerfile` is included using a multi-stage build.
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 src/main/java/com/shopSphere/
@@ -90,8 +90,9 @@ src/main/java/com/shopSphere/
 
 ---
 
-## 📚 Documentation
+##  Documentation
 
 For deep-dive technical details regarding system architecture, data models, and API behaviors, please see the `docs/` folder located in this directory (or the repository root).
 
 > **Note for AI Agents:** Please read `agents.md` before modifying this backend.
+

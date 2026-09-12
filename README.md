@@ -1,12 +1,12 @@
 # ShopSphere
 
 <div align="center">
-  <h3>A modern, full-stack E-Commerce platform built with React, Spring Boot, MongoDB, and Stripe.</h3>
+ <h3>A modern, full-stack E-Commerce platform built with React, Spring Boot, MongoDB, and Stripe.</h3>
 </div>
 
 ---
 
-## 🎯 Problem Statement
+## Problem Statement
 
 Building a reliable e-commerce platform requires handling complex asynchronous workflows, preventing race conditions during checkout (like overselling inventory), and ensuring secure payment processing. Many monolithic architectures struggle with these requirements.
 
@@ -17,7 +17,7 @@ Building a reliable e-commerce platform requires handling complex asynchronous w
 
 ---
 
-## ✨ Features
+## Features
 
 ### For Customers
 - **Authentication & Authorization:** Secure JWT-based login and registration.
@@ -33,7 +33,7 @@ Building a reliable e-commerce platform requires handling complex asynchronous w
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -46,7 +46,7 @@ Building a reliable e-commerce platform requires handling complex asynchronous w
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## Quick Start (Local Development)
 
 ### 1. Clone the repository
 ```bash
@@ -83,12 +83,13 @@ npm run dev
 
 ---
 
-## 🏗️ Architecture & Documentation
+## Architecture & Documentation
 
 For a deep dive into the system design, database schemas, deployment pipelines, and API flow, check out the [Documentation Directory](./docs/):
 
-- 📜 [Architecture & Data Flow](./docs/architecture.md)
-- 🗄️ [Database Schema](./docs/database.md)
-- 🚀 [Deployment Guide](./docs/deployment.md)
+- [Architecture & Data Flow](./docs/architecture.md)
+- [Database Schema](./docs/database.md)
+- [Deployment Guide](./docs/deployment.md)
 
 *(AI Agents: Please read `AGENT.md` before making architectural changes).*
+
