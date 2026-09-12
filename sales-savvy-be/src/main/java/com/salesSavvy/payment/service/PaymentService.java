@@ -1,10 +1,9 @@
 package com.salesSavvy.payment.service;
 
-import com.razorpay.Order;
-import com.razorpay.RazorpayException;
+import java.util.Map;
 
 public interface PaymentService {
-    Order createRazorpayOrder(int amountPaise) throws RazorpayException;
-    boolean verifySignature(String orderId, String paymentId, String signature);
-    String getKeyId();
+    Map<String, Object> createPaymentIntent(long amountPaise, String currency) throws Exception;
+    boolean verifyWebhookSignature(String payload, String sigHeader) throws Exception;
+    String getPublishableKey();
 }

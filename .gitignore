@@ -1,0 +1,26 @@
+﻿# Environment secrets — NEVER commit
+.env
+.env.*
+!.env.example
+
+# Java build output
+sales-savvy-be/target/
+
+# Frontend build
+sales_savvy_fr/dist/
+sales_savvy_fr/node_modules/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.classpath
+*.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven wrapper cache
+.mvn/wrapper/maven-wrapper.jar

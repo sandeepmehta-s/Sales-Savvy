@@ -1,0 +1,32 @@
+﻿# Build output (compiled inside Docker)
+target/
+
+# Local secrets — never in image
+.env
+.env.*
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.classpath
+*.project
+.settings/
+
+# Git
+.git/
+.gitignore
+
+# Docs
+docs/
+README.md
+AGENT.md
+
+# Maven wrapper (Docker uses system Maven)
+.mvn/
+mvnw
+mvnw.cmd
+
+# OS
+.DS_Store
+Thumbs.db

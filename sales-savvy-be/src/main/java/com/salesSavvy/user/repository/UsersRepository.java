@@ -1,14 +1,12 @@
 package com.salesSavvy.user.repository;
 
 import com.salesSavvy.user.entity.Users;
-import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.List;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.Optional;
 
-public interface UsersRepository extends JpaRepository<Users, Long> {
+public interface UsersRepository extends MongoRepository<Users, String> {
     Optional<Users> findByUsername(String username);
     Optional<Users> findByEmail(String email);
-    List<Users> findByRole(String role);
-    Boolean existsByUsername(String username);
-    Boolean existsByEmail(String email);
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
 }

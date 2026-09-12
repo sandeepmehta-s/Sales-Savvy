@@ -1,24 +1,16 @@
 package com.salesSavvy.payment.controller;
 
+import com.salesSavvy.order.entity.Orders;
+import com.salesSavvy.order.service.OrderService;
+import com.salesSavvy.payment.dto.PaymentRequest;
+import com.salesSavvy.payment.dto.PaymentVerifyRequest;
+import com.salesSavvy.payment.service.PaymentService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.json.JSONObject;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.razorpay.Order;
-import com.razorpay.RazorpayException;
-import com.salesSavvy.payment.dto.PaymentRequest;
-import com.salesSavvy.payment.dto.PaymentVerifyRequest;
-import com.salesSavvy.order.entity.Orders;
-import com.salesSavvy.order.service.OrderService;
-import com.salesSavvy.payment.service.PaymentService;
 
 @RestController
 @RequestMapping("/payment")
@@ -32,112 +24,70 @@ public class PaymentController {
         this.orderService = orderService;
     }
 
-    @PostMapping("/create-order")
-    public ResponseEntity<Map<String, Object>> createOrder(@RequestBody PaymentRequest paymentRequest, Principal principal) {
+    /**
+     * Step 1: Frontend calls this to create a Stripe PaymentIntent
+     * Returns clientSecret for Stripe.js to confirm payment on frontend
+     */
+    @PostMapping("/create-intent")
+    public ResponseEntity<Map<String, Object>> createIntent(
+            @RequestBody PaymentRequest request, Principal principal) {
         try {
-            if (principal == null || !principal.getName().equals(paymentRequest.getUsername())) {
+            if (principal == null || !principal.getName().equals(request.getUsername())) {
                 return ResponseEntity.status(403).build();
             }
-            Order razorpayOrder = paymentService.createRazorpayOrder(paymentRequest.getAmount());
-
-            JSONObject orderJson = new JSONObject(razorpayOrder.toString());
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("orderId", orderJson.getString("id"));
-            response.put("amount", orderJson.getInt("amount"));
-            response.put("currency", orderJson.getString("currency"));
-            response.put("key", paymentService.getKeyId());
-
+            Map<String, Object> response = paymentService.createPaymentIntent(
+                request.getAmount(), request.getCurrency()
+            );
+            response.put("publishableKey", paymentService.getPublishableKey());
             return ResponseEntity.ok(response);
-        } catch (RazorpayException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to create order");
-            errorResponse.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("error", "Failed to create payment intent");
+            err.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(err);
         }
     }
 
-    
-    @PostMapping("/verify")
-    public ResponseEntity<Map<String, Object>> verifyPayment(
-            @RequestBody PaymentVerifyRequest verifyRequest,
-            Principal principal) {
+    /**
+     * Step 2: Frontend calls this after Stripe.js confirms payment
+     * Creates order atomically and marks it PAID
+     */
+    @PostMapping("/confirm")
+    public ResponseEntity<Map<String, Object>> confirmPayment(
+            @RequestBody PaymentVerifyRequest verifyRequest, Principal principal) {
 
         Map<String, Object> response = new HashMap<>();
-
         try {
-//            System.out.println("=== STEP 1: Starting payment verification ===");
-//            System.out.println("Received payment data:");
-//            System.out.println(" - Order ID: " + verifyRequest.getOrderId());
-//            System.out.println(" - Payment ID: " + verifyRequest.getPaymentId());
-//            System.out.println(" - Signature: " + verifyRequest.getSignature());
-//            System.out.println(" - Amount: " + verifyRequest.getAmount());
-//            System.out.println(" - Principal: " + (principal != null ? principal.getName() : "NULL"));
-
-            // ✅ 1. Verify Razorpay signature
-            System.out.println("=== STEP 2: Verifying Razorpay signature ===");
-            boolean isValid = paymentService.verifySignature(
-                    verifyRequest.getOrderId(),
-                    verifyRequest.getPaymentId(),
-                    verifyRequest.getSignature()
-            );
-
-//            System.out.println("Signature verification result: " + isValid);
-
-            if (!isValid) {
-                System.out.println("❌ Signature verification FAILED");
-                response.put("status", "error");
-                response.put("message", "Payment verification failed");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            System.out.println("✅ Signature verification PASSED");
-
-            // ✅ 2. Get username
-            System.out.println("=== STEP 3: Getting username ===");
             String username = principal.getName();
-            System.out.println("Using username: " + username);
 
-            // ✅ 3. Create Order from Cart
-            System.out.println("=== STEP 4: Creating order from cart ===");
-            System.out.println("Calling orderService.createOrderFromCart...");
-            
-            // Bug Fix #3: Single atomic call — creates order AND marks PAID in one transaction
-            // Previously two separate calls could leave order in CREATED state if second call failed
+            // Atomic: create order + mark PAID in one call
             Orders createdOrder = orderService.createOrderAndMarkPaid(
-                    username,
-                    verifyRequest.getOrderId(),
-                    verifyRequest.getAmount(),
-                    verifyRequest.getPaymentId()
+                username,
+                verifyRequest.getPaymentIntentId(),
+                verifyRequest.getAmount(),
+                verifyRequest.getPaymentId()
             );
 
-            System.out.println("✅ Order created and marked PAID with ID: " + createdOrder.getId());
-
-            // ✅ 5. Send success response
             response.put("status", "success");
-            response.put("message", "Payment verified and order created successfully");
+            response.put("message", "Payment confirmed and order created successfully");
             response.put("orderId", createdOrder.getId());
             response.put("amount", createdOrder.getAmount());
-            
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-//            System.out.println("❌ ERROR IN PAYMENT VERIFICATION:");
-//            System.out.println("Error message: " + e.getMessage());
-//            System.out.println("Error class: " + e.getClass().getName());
-            e.printStackTrace(); // This will show the exact line where it fails
-            
+            e.printStackTrace();
             response.put("status", "error");
-            response.put("message", "Payment was successful but there was an issue creating your order");
+            response.put("message", "Payment was successful but order creation failed");
             response.put("error", e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
     }
 
+    /** Returns Stripe publishable key for frontend Stripe.js initialization */
     @GetMapping("/key")
     public ResponseEntity<Map<String, String>> getKey() {
         Map<String, String> response = new HashMap<>();
-        response.put("key", paymentService.getKeyId());
+        response.put("publishableKey", paymentService.getPublishableKey());
         return ResponseEntity.ok(response);
     }
 }

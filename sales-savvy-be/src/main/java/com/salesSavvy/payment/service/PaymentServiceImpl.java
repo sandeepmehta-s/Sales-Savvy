@@ -1,52 +1,64 @@
 package com.salesSavvy.payment.service;
 
-import com.razorpay.Order;
-import com.razorpay.RazorpayClient;
-import com.razorpay.RazorpayException;
-import com.razorpay.Utils;
-import org.json.JSONObject;
+import com.stripe.Stripe;
+import com.stripe.model.PaymentIntent;
+import com.stripe.model.Event;
+import com.stripe.net.Webhook;
+import com.stripe.param.PaymentIntentCreateParams;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
 
-    @Value("${razorpay.key.id}")
-    private String keyId;
+    @Value("${stripe.secret.key}")
+    private String secretKey;
 
-    @Value("${razorpay.key.secret}")
-    private String keySecret;
+    @Value("${stripe.webhook.secret}")
+    private String webhookSecret;
 
-    @Override
-    public Order createRazorpayOrder(int amountPaise) throws RazorpayException {
-        RazorpayClient client = new RazorpayClient(keyId, keySecret);
+    @Value("${stripe.publishable.key:pk_test_placeholder}")
+    private String publishableKey;
 
-        JSONObject request = new JSONObject();
-        request.put("amount", amountPaise);
-        request.put("currency", "INR");
-        request.put("receipt", "rcpt_" + System.currentTimeMillis());
-        request.put("payment_capture", 1);
-
-        return client.orders.create(request);
+    @PostConstruct
+    public void init() {
+        Stripe.apiKey = secretKey;
     }
 
     @Override
-    public boolean verifySignature(String orderId, String paymentId, String signature) {
-        JSONObject payload = new JSONObject();
-        payload.put("razorpay_order_id", orderId);
-        payload.put("razorpay_payment_id", paymentId);
-        payload.put("razorpay_signature", signature);
+    public Map<String, Object> createPaymentIntent(long amountPaise, String currency) throws Exception {
+        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+            .setAmount(amountPaise)
+            .setCurrency(currency.toLowerCase())
+            .setAutomaticPaymentMethods(
+                PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                    .setEnabled(true)
+                    .build()
+            )
+            .build();
 
-        try {
-            Utils.verifyPaymentSignature(payload, keySecret);
-            return true;
-        } catch (RazorpayException e) {
-            return false;
-        }
+        PaymentIntent intent = PaymentIntent.create(params);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("clientSecret", intent.getClientSecret());
+        response.put("paymentIntentId", intent.getId());
+        response.put("amount", intent.getAmount());
+        response.put("currency", intent.getCurrency());
+        return response;
     }
 
     @Override
-    public String getKeyId() {
-        return keyId;
+    public boolean verifyWebhookSignature(String payload, String sigHeader) throws Exception {
+        Event event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+        return event != null;
+    }
+
+    @Override
+    public String getPublishableKey() {
+        return publishableKey;
     }
 }
