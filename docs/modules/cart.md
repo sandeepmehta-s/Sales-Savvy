@@ -4,7 +4,7 @@
 Per-user shopping cart. CartItems are **embedded** inside the Cart document (no separate collection).
 
 ## Package
-`com.salesSavvy.cart`
+`com.shopSphere.cart`
 
 ## MongoDB Design
 

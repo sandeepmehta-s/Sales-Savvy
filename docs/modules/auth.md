@@ -4,7 +4,7 @@
 Handles user registration, login, and JWT token management.
 
 ## Package
-`com.salesSavvy.auth`
+`com.shopSphere.auth`
 
 ## Endpoints
 

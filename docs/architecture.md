@@ -54,7 +54,7 @@ Browser → fetch(VITE_API_URL/cart/add) + Authorization: Bearer <jwt>
 ## Backend Package Structure
 
 ```
-com.salesSavvy/
+com.shopSphere/
 ├── auth/
 │   ├── controller/AuthController.java
 │   ├── dto/AuthResponse.java

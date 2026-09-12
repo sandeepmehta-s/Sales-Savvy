@@ -27,7 +27,7 @@
 ```
 ShopSphere/
 ├── backend/                   # Spring Boot REST API
-│   ├── src/main/java/com/salesSavvy/
+│   ├── src/main/java/com/shopSphere/
 │   │   ├── auth/              # JWT auth, login, register
 │   │   ├── user/              # User CRUD
 │   │   ├── product/           # Product catalog

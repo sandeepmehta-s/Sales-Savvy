@@ -4,7 +4,7 @@
 JWT-based authentication, role-based authorization, and CORS configuration.
 
 ## Package
-`com.salesSavvy.shared`
+`com.shopSphere.shared`
 
 ## JWT Filter Chain
 

@@ -4,7 +4,7 @@
 Product catalog management. Public read, admin write.
 
 ## Package
-`com.salesSavvy.product`
+`com.shopSphere.product`
 
 ## MongoDB Document
 

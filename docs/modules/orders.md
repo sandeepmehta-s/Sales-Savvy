@@ -4,7 +4,7 @@
 Order lifecycle management. OrderItems are **embedded** in the Orders document (snapshot at order time).
 
 ## Package
-`com.salesSavvy.order`
+`com.shopSphere.order`
 
 ## MongoDB Design
 

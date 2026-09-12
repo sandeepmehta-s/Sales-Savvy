@@ -4,7 +4,7 @@
 Handles payment processing via Stripe Payment Intents.
 
 ## Package
-`com.salesSavvy.payment`
+`com.shopSphere.payment`
 
 ## Environment Variables
 

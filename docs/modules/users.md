@@ -4,7 +4,7 @@
 User profile management. Admins can list, update, and delete users.
 
 ## Package
-`com.salesSavvy.user`
+`com.shopSphere.user`
 
 ## MongoDB Document
 
