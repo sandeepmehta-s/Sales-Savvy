@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.MongoTransactionManager;
 public class MongoConfig {
 
     @Bean
-    public MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
+    public MongoTransactionManager transactionManager(@org.springframework.lang.NonNull MongoDatabaseFactory dbFactory) {
         return new MongoTransactionManager(dbFactory);
     }
 }
