@@ -1,7 +1,12 @@
 import axios from 'axios'
 
+const isProd = import.meta.env.PROD
+const defaultUrl = isProd 
+  ? 'https://shopsphere-backend.onrender.com' // <-- UPDATE THIS if your Render backend URL is different
+  : 'http://localhost:8080'
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_URL || defaultUrl,
   headers: {
     'Content-Type': 'application/json',
   },
