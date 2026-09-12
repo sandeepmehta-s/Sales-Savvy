@@ -8,8 +8,8 @@
 		<version>3.5.0</version>
 		<relativePath/>
 	</parent>
-	<groupId>com.salesSavvy</groupId>
-	<artifactId>com.salesSavvy</artifactId>
+	<groupId>com.ShopSphere</groupId>
+	<artifactId>com.ShopSphere</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ShopSphere</name>
 	<description>ShopSphere - Full-stack E-Commerce Application</description>

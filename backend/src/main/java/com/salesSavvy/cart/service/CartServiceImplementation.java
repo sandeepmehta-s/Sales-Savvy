@@ -1,17 +1,18 @@
 package com.salesSavvy.cart.service;
 
-import com.salesSavvy.cart.entity.Cart;
-import com.salesSavvy.cart.entity.CartItem;
-import com.salesSavvy.product.entity.Product;
-import com.salesSavvy.shared.exception.ResourceNotFoundException;
-import com.salesSavvy.cart.repository.CartRepository;
-import com.salesSavvy.product.repository.ProductRepository;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
+
+import org.springframework.stereotype.Service;
+
+import com.salesSavvy.cart.entity.Cart;
+import com.salesSavvy.cart.entity.CartItem;
+import com.salesSavvy.cart.repository.CartRepository;
+import com.salesSavvy.product.entity.Product;
+import com.salesSavvy.product.repository.ProductRepository;
+import com.salesSavvy.shared.exception.ResourceNotFoundException;
 
 @Service
 public class CartServiceImplementation implements CartService {
@@ -29,15 +30,16 @@ public class CartServiceImplementation implements CartService {
     public void addToCart(String username, String productId, int quantity) {
         if (quantity <= 0) throw new IllegalArgumentException("Quantity must be greater than 0");
 
-        Product product = productRepository.findById(productId)
+        // Objects.requireNonNull narrows type to @NonNull — satisfies JDT null checker
+        Product product = productRepository.findById(Objects.requireNonNull(productId))
             .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
 
         Cart cart = cartRepository.findByUsername(username)
             .orElseGet(() -> cartRepository.save(new Cart(username)));
 
-        CartItem newItem = new CartItem(
-            product.getId(), product.getName(), product.getPrice(), product.getPhoto(), quantity
-        );
+        String productName = Objects.toString(product.getName(), "");
+        String pid = Objects.toString(product.getId(), "");
+        CartItem newItem = new CartItem(pid, productName, product.getPrice(), product.getPhoto(), quantity);
         cart.addCartItem(newItem);
         cartRepository.save(cart);
     }
@@ -52,15 +54,16 @@ public class CartServiceImplementation implements CartService {
         if (quantity == 0) {
             cart.updateCartItem(productId, 0);
         } else {
-            // Check if item exists; if not, add it
             boolean found = cart.getCartItems().stream()
-                .anyMatch(item -> item.getProductId().equals(productId));
+                .anyMatch(item -> productId.equals(item.getProductId()));
             if (found) {
                 cart.updateCartItem(productId, quantity);
             } else {
-                Product product = productRepository.findById(productId)
+                Product product = productRepository.findById(Objects.requireNonNull(productId))
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
-                cart.addCartItem(new CartItem(product.getId(), product.getName(), product.getPrice(), product.getPhoto(), quantity));
+                String productName = Objects.toString(product.getName(), "");
+                String pid = Objects.toString(product.getId(), "");
+                cart.addCartItem(new CartItem(pid, productName, product.getPrice(), product.getPhoto(), quantity));
             }
         }
         cartRepository.save(cart);
@@ -81,8 +84,11 @@ public class CartServiceImplementation implements CartService {
 
     @Override
     public List<CartItem> getCartItems(String username) {
-        Optional<Cart> cartOpt = cartRepository.findByUsername(username);
-        return cartOpt.map(Cart::getCartItems).orElse(Collections.emptyList());
+        // Avoid Cart::getCartItems method-reference form — use explicit lambda
+        // so JDT can verify the return type is @NonNull
+        return cartRepository.findByUsername(username)
+            .map(cart -> cart.getCartItems())
+            .orElse(Collections.emptyList());
     }
 
     @Override
@@ -103,7 +109,8 @@ public class CartServiceImplementation implements CartService {
         List<CartItem> items = getCartItems(username);
         BigDecimal total = BigDecimal.ZERO;
         for (CartItem item : items) {
-            total = total.add(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+            BigDecimal price = item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO;
+            total = total.add(price.multiply(BigDecimal.valueOf(item.getQuantity())));
         }
         return total;
     }

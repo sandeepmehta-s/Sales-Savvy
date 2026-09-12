@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -39,7 +40,8 @@ public class OrderServiceImpl implements OrderService {
 
         // Check and deduct stock for each item
         for (CartItem cartItem : cartItems) {
-            Product product = productRepository.findById(cartItem.getProductId())
+            Product product = productRepository.findById(
+                    Objects.requireNonNull(cartItem.getProductId(), "productId must not be null"))
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + cartItem.getProductId()));
 
             if (!product.hasStock(cartItem.getQuantity())) {
@@ -106,7 +108,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Optional<Orders> getOrderById(String id) {
-        return orderRepository.findById(id);
+        return orderRepository.findById(Objects.requireNonNull(id));
     }
 
     @Override
@@ -141,8 +143,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void updatePaymentDetails(String stripePaymentIntentId, String paymentId, String status) {
-        Orders order = orderRepository.findByStripePaymentIntentId(stripePaymentIntentId)
-            .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + stripePaymentIntentId));
+        Orders order = orderRepository.findByStripePaymentIntentId(stripePaymentIntentId).orElse(null);
+        if (order == null)
+            throw new ResourceNotFoundException("Order not found: " + String.valueOf(stripePaymentIntentId));
         order.setPaymentId(paymentId);
         order.setStatus(status);
         orderRepository.save(order);

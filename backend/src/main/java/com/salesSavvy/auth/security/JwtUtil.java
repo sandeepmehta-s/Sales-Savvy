@@ -25,7 +25,9 @@ public class JwtUtil {
     private long jwtExpiration;
 
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        // Explicit cast avoids the "unchecked conversion" null-type-safety warning
+        // from the Claims::getSubject method reference
+        return extractClaim(token, claims -> (String) claims.getSubject());
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -58,7 +60,9 @@ public class JwtUtil {
     }
 
     private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+        // Explicit cast avoids the "unchecked conversion" null-type-safety warning
+        // from the Claims::getExpiration method reference
+        return extractClaim(token, claims -> (Date) claims.getExpiration());
     }
 
     private Claims extractAllClaims(String token) {

@@ -1,16 +1,18 @@
 package com.salesSavvy.user.service;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.salesSavvy.cart.entity.Cart;
 import com.salesSavvy.cart.repository.CartRepository;
 import com.salesSavvy.shared.exception.DuplicateResourceException;
 import com.salesSavvy.shared.exception.ResourceNotFoundException;
 import com.salesSavvy.user.entity.Users;
 import com.salesSavvy.user.repository.UsersRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UsersServiceImplementation implements UsersService {
@@ -29,17 +31,21 @@ public class UsersServiceImplementation implements UsersService {
 
     @Override
     public void signUp(Users user) {
-        if (usersRepository.existsByUsername(user.getUsername()))
-            throw new DuplicateResourceException("User", "username", user.getUsername());
-        if (usersRepository.existsByEmail(user.getEmail()))
-            throw new DuplicateResourceException("User", "email", user.getEmail());
+        String username = Objects.toString(user.getUsername(), "");
+        String email    = Objects.toString(user.getEmail(), "");
+
+        if (usersRepository.existsByUsername(username))
+            throw new DuplicateResourceException("User", "username", username);
+        if (usersRepository.existsByEmail(email))
+            throw new DuplicateResourceException("User", "email", email);
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole("ROLE_CUSTOMER");
         Users saved = usersRepository.save(user);
 
         // Create cart document for new user
-        Cart cart = new Cart(saved.getUsername());
+        String savedUsername = Objects.toString(saved.getUsername(), "");
+        Cart cart = new Cart(savedUsername);
         Cart savedCart = cartRepository.save(cart);
         saved.setCartId(savedCart.getId());
         usersRepository.save(saved);
@@ -47,8 +53,10 @@ public class UsersServiceImplementation implements UsersService {
 
     @Override
     public Users getUser(String username) {
-        return usersRepository.findByUsername(username)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        Users found = usersRepository.findByUsername(username).orElse(null);
+        if (found == null)
+            throw new ResourceNotFoundException("User not found: " + username);
+        return found;
     }
 
     @Override
@@ -63,38 +71,47 @@ public class UsersServiceImplementation implements UsersService {
 
     @Override
     public String deleteUser(String id) {
-        Users user = usersRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        // Objects.requireNonNull narrows type to @NonNull — satisfies JDT checker for findById
+        Users user = usersRepository.findById(Objects.requireNonNull(id)).orElse(null);
+        if (user == null)
+            throw new ResourceNotFoundException("User not found with id: " + id);
 
         if (user.getOrderIds() != null && !user.getOrderIds().isEmpty())
             throw new IllegalStateException("Cannot delete user with existing orders");
 
-        cartRepository.findByUsername(user.getUsername()).ifPresent(cartRepository::delete);
+        String username = Objects.toString(user.getUsername(), "");
+        cartRepository.findByUsername(username).ifPresent(cartRepository::delete);
         usersRepository.delete(user);
         return "User deleted successfully";
     }
 
     @Override
     public String updateUser(Users user) {
-        Users existing = usersRepository.findById(user.getId())
-            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + user.getId()));
+        String userId = Objects.requireNonNull(user.getId(), "User ID must not be null");
+        Users existing = usersRepository.findById(userId).orElse(null);
+        if (existing == null)
+            throw new ResourceNotFoundException("User not found: " + userId);
 
-        if (user.getUsername() != null && !user.getUsername().equals(existing.getUsername())) {
-            if (usersRepository.existsByUsername(user.getUsername()))
-                throw new DuplicateResourceException("User", "username", user.getUsername());
-            existing.setUsername(user.getUsername());
+        String newUsername = user.getUsername();
+        if (newUsername != null && !newUsername.equals(existing.getUsername())) {
+            if (usersRepository.existsByUsername(newUsername))
+                throw new DuplicateResourceException("User", "username", newUsername);
+            existing.setUsername(newUsername);
         }
-        if (user.getEmail() != null && !user.getEmail().equals(existing.getEmail())) {
-            if (usersRepository.existsByEmail(user.getEmail()))
-                throw new DuplicateResourceException("User", "email", user.getEmail());
-            existing.setEmail(user.getEmail());
+        String newEmail = user.getEmail();
+        if (newEmail != null && !newEmail.equals(existing.getEmail())) {
+            if (usersRepository.existsByEmail(newEmail))
+                throw new DuplicateResourceException("User", "email", newEmail);
+            existing.setEmail(newEmail);
         }
-        if (user.getPassword() != null && !user.getPassword().isEmpty())
-            existing.setPassword(passwordEncoder.encode(user.getPassword()));
+        String newPassword = user.getPassword();
+        if (newPassword != null && !newPassword.isEmpty())
+            existing.setPassword(passwordEncoder.encode(newPassword));
         if (user.getGender() != null) existing.setGender(user.getGender());
         if (user.getDob() != null) existing.setDob(user.getDob());
-        if (user.getRole() != null && existing.getRole().equals("ROLE_ADMIN"))
-            existing.setRole(user.getRole());
+        String newRole = user.getRole();
+        if (newRole != null && "ROLE_ADMIN".equals(existing.getRole()))
+            existing.setRole(newRole);
 
         usersRepository.save(existing);
         return "User updated successfully";

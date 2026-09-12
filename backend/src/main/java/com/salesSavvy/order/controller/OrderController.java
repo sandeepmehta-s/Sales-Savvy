@@ -2,7 +2,6 @@ package com.salesSavvy.order.controller;
 
 import com.salesSavvy.order.dto.OrderItemResponse;
 import com.salesSavvy.order.dto.OrderResponse;
-import com.salesSavvy.order.entity.OrderItem;
 import com.salesSavvy.order.entity.Orders;
 import com.salesSavvy.order.service.OrderService;
 import org.springframework.http.ResponseEntity;

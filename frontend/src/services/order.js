@@ -2,13 +2,8 @@ import API from './api'
 
 export const orderService = {
   // Customer operations
-  createOrder: async (username, razorpayOrderId, amount) => {
-    const response = await API.post('/orders/create', null, {
-      params: { username, razorpayOrderId, amount }
-    })
-    return response.data
-  },
 
+  /** Fetch all orders for the authenticated user */
   getUserOrders: async (username) => {
     const response = await API.get(`/orders/user/${username}`)
     return response.data
@@ -19,19 +14,22 @@ export const orderService = {
     return response.data
   },
 
-  cancelOrder: async (razorpayOrderId) => {
-    const response = await API.put(`/orders/${razorpayOrderId}/cancel`)
+  /** Cancel an order by its Stripe PaymentIntent ID */
+  cancelOrder: async (stripePaymentIntentId) => {
+    const response = await API.put(`/orders/${stripePaymentIntentId}/cancel`)
     return response.data
   },
 
   // Admin operations
+
   getAllOrders: async () => {
     const response = await API.get('/orders')
     return response.data
   },
 
-  updateOrderStatus: async (razorpayOrderId, status) => {
-    const response = await API.put(`/orders/${razorpayOrderId}/status`, null, {
+  /** Update order status by Stripe PaymentIntent ID */
+  updateOrderStatus: async (stripePaymentIntentId, status) => {
+    const response = await API.put(`/orders/${stripePaymentIntentId}/status`, null, {
       params: { status }
     })
     return response.data

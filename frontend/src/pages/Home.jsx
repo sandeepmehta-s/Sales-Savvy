@@ -41,7 +41,7 @@ const Home = () => {
                 <span className="feature-number">02</span>
                 <i className="bi bi-shield-check display-4 text-success mb-3"></i>
                 <h4>Secure Payments</h4>
-                <p>We use Razorpay for 100% secure and trusted transactions.</p>
+                <p>We use Stripe for 100% secure and trusted transactions.</p>
               </div>
             </div>
 

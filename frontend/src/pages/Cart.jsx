@@ -1,10 +1,98 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { loadStripe } from '@stripe/stripe-js'
+import {
+  CardElement,
+  Elements,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js'
 import { useAuth } from '../context/AuthContext'
 import { cartService } from '../services/cart'
 import { paymentService } from '../services/payment'
 import Loading from '../components/common/Loading'
 
+// ---------------------------------------------------------------------------
+// Stripe Elements card form — rendered inside a Bootstrap modal
+// ---------------------------------------------------------------------------
+const CheckoutForm = ({ clientSecret, paymentIntentId, totalPaise, onSuccess, onCancel }) => {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [processing, setProcessing] = useState(false)
+  const [cardError, setCardError] = useState(null)
+
+  const handlePay = async (e) => {
+    e.preventDefault()
+    if (!stripe || !elements) return
+
+    setProcessing(true)
+    setCardError(null)
+
+    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: elements.getElement(CardElement),
+      },
+    })
+
+    if (error) {
+      setCardError(error.message)
+      setProcessing(false)
+    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      onSuccess(paymentIntentId, paymentIntent.payment_method, totalPaise)
+    }
+  }
+
+  return (
+    <form onSubmit={handlePay}>
+      <div className="modal-body">
+        <p className="text-muted mb-3">Enter your card details to complete the purchase.</p>
+        <div className="border rounded p-3 bg-light" style={{ minHeight: '42px' }}>
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#212529',
+                  '::placeholder': { color: '#6c757d' },
+                },
+              },
+            }}
+          />
+        </div>
+        {cardError && (
+          <div className="alert alert-danger mt-3 py-2 mb-0" role="alert">
+            {cardError}
+          </div>
+        )}
+      </div>
+      <div className="modal-footer">
+        <button
+          type="button"
+          className="btn btn-outline-secondary"
+          onClick={onCancel}
+          disabled={processing}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={processing || !stripe}
+        >
+          {processing ? (
+            <span><i className="bi bi-arrow-repeat me-2 spin" />Processing…</span>
+          ) : (
+            <span><i className="bi bi-lock-fill me-1" />Pay Now</span>
+          )}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main Cart page
+// ---------------------------------------------------------------------------
 const Cart = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -12,9 +100,32 @@ const Cart = () => {
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
 
+  // Stripe state
+  const [stripePromise, setStripePromise] = useState(null)
+  const [clientSecret, setClientSecret] = useState(null)
+  const [paymentIntentId, setPaymentIntentId] = useState(null)
+  const [showPayModal, setShowPayModal] = useState(false)
+
+  // Load Stripe publishable key once on mount
+  useEffect(() => {
+    const envKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+    if (envKey && envKey !== 'pk_test_...') {
+      setStripePromise(loadStripe(envKey))
+      return
+    }
+    // Fallback: fetch from backend /payment/key (requires auth, so only after user loads)
+    paymentService.getKey()
+      .then(({ publishableKey }) => {
+        if (publishableKey && !publishableKey.startsWith('pk_test_placeholder')) {
+          setStripePromise(loadStripe(publishableKey))
+        }
+      })
+      .catch((err) => console.warn('Could not fetch Stripe key:', err))
+  }, [])
+
   useEffect(() => {
     if (user) loadCart()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   const loadCart = async () => {
@@ -48,29 +159,21 @@ const Cart = () => {
     }
   }
 
+  /** Step 1: Create PaymentIntent on backend, then open Stripe card modal */
   const handleCheckout = async () => {
     if (!user) return alert('Please login to proceed with checkout')
     if (!cart?.items?.length) return alert('Your cart is empty')
+    if (!stripePromise) {
+      return alert('Payment system is not configured yet. Please add VITE_STRIPE_PUBLISHABLE_KEY to your .env file.')
+    }
 
     setCheckoutLoading(true)
     try {
-      const totalAmount = Math.round(cart.totalPrice * 100)
-      const orderResponse = await paymentService.createOrder(totalAmount, user.username)
-      await loadRazorpayScript()
-
-      const options = {
-        key: orderResponse.key,
-        amount: orderResponse.amount,
-        currency: orderResponse.currency,
-        name: 'SalesSavvy',
-        description: 'Order Payment',
-        order_id: orderResponse.orderId,
-        handler: async (response) => handlePaymentSuccess(response, orderResponse.orderId),
-        prefill: { name: user.username, email: user.email || '' },
-        theme: { color: '#0d6efd' }
-      }
-
-      new window.Razorpay(options).open()
+      const totalPaise = Math.round(cart.totalPrice * 100)
+      const data = await paymentService.createPaymentIntent(totalPaise, user.username)
+      setClientSecret(data.clientSecret)
+      setPaymentIntentId(data.paymentIntentId)
+      setShowPayModal(true)
     } catch (error) {
       console.error('Checkout error:', error)
       alert('Failed to initialize payment. Please try again.')
@@ -79,45 +182,32 @@ const Cart = () => {
     }
   }
 
-  const loadRazorpayScript = () => {
-    return new Promise((resolve, reject) => {
-      if (window.Razorpay) {
-        resolve()
-        return
-      }
-      const script = document.createElement('script')
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-      script.async = true
-      script.onload = resolve
-      script.onerror = () => reject(new Error('Failed to load payment gateway'))
-      document.body.appendChild(script)
-    })
-  }
-
-  const handlePaymentSuccess = async (paymentResponse, razorpayOrderId) => {
+  /** Step 2: Called by CheckoutForm after stripe.confirmCardPayment succeeds */
+  const handlePaymentSuccess = async (intentId, paymentMethodId, totalPaise) => {
+    setShowPayModal(false)
     try {
-      const verifyData = {
-        razorpay_order_id: razorpayOrderId,
-        razorpay_payment_id: paymentResponse.razorpay_payment_id,
-        razorpay_signature: paymentResponse.razorpay_signature,
-        amount: Math.round(cart.totalPrice * 100)
-      }
-
-      const verification = await paymentService.verifyPayment(verifyData)
-      if (verification.status === 'success') {
+      const result = await paymentService.confirmPayment(intentId, paymentMethodId, totalPaise)
+      if (result.status === 'success') {
         await cartService.clearCart(user.username)
-        alert('Payment successful! Order placed.')
+        alert(`Payment successful! Order placed.`)
         navigate('/orders')
       } else {
-        alert('Payment verification failed.')
+        alert('Payment confirmation failed. Please contact support.')
       }
     } catch (error) {
-      console.error('Payment success handling error:', error)
-      alert('Payment was successful but order creation failed.')
+      console.error('Payment confirm error:', error)
+      alert('Payment was processed but order creation failed. Please contact support.')
     }
   }
 
+  const handleCancelModal = () => {
+    setShowPayModal(false)
+    setClientSecret(null)
+    setPaymentIntentId(null)
+  }
+
   const total = cart?.totalPrice || 0
+  const totalPaise = Math.round(total * 100)
   const itemCount = cart?.items?.reduce((sum, i) => sum + i.quantity, 0) || 0
 
   if (loading) return <Loading />
@@ -131,7 +221,7 @@ const Cart = () => {
         <div className="text-center mt-5">
           <h4 className="text-muted">Your cart is empty</h4>
           <Link to="/products" className="btn btn-primary mt-3">
-            <i className="bi bi-bag"></i> Continue Shopping
+            <i className="bi bi-bag me-1" />Continue Shopping
           </Link>
         </div>
       ) : (
@@ -159,23 +249,25 @@ const Cart = () => {
                         onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                       >
-                        <i className="bi bi-dash"></i>
+                        <i className="bi bi-dash" />
                       </button>
                       <span>{item.quantity}</span>
                       <button
                         className="btn btn-outline-secondary btn-sm ms-2"
                         onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                       >
-                        <i className="bi bi-plus"></i>
+                        <i className="bi bi-plus" />
                       </button>
                     </div>
-                    <div className="col-2 fw-semibold">₹{item.subtotal}</div>
+                    <div className="col-2 fw-semibold">
+                      ₹{(item.price * item.quantity).toFixed(2)}
+                    </div>
                     <div className="col-1 text-end">
                       <button
                         className="btn btn-sm btn-outline-danger"
                         onClick={() => removeItem(item.productId)}
                       >
-                        <i className="bi bi-trash"></i>
+                        <i className="bi bi-trash" />
                       </button>
                     </div>
                   </div>
@@ -184,7 +276,7 @@ const Cart = () => {
             </div>
           </div>
 
-          {/* Summary */}
+          {/* Order Summary */}
           <div className="col-lg-4">
             <div className="card shadow-sm border-0">
               <div className="card-body">
@@ -212,21 +304,66 @@ const Cart = () => {
                   disabled={checkoutLoading || !itemCount}
                 >
                   {checkoutLoading ? (
-                    <span><i className="bi bi-arrow-repeat me-2 spin"></i>Processing...</span>
+                    <span><i className="bi bi-arrow-repeat me-2 spin" />Processing…</span>
                   ) : (
-                    <span><i className="bi bi-credit-card me-2"></i>Proceed to Checkout</span>
+                    <span><i className="bi bi-credit-card me-2" />Proceed to Checkout</span>
                   )}
                 </button>
                 <small className="text-muted d-block text-center">
-                  🔒 Secure checkout powered by Razorpay
+                  🔒 Secure checkout powered by Stripe
                 </small>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Stripe Payment Modal                                                */}
+      {/* ------------------------------------------------------------------ */}
+      {showPayModal && clientSecret && stripePromise && (
+        <>
+          <div
+            className="modal-backdrop fade show"
+            style={{ zIndex: 1040 }}
+            onClick={handleCancelModal}
+          />
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            style={{ zIndex: 1050 }}
+            aria-modal="true"
+            role="dialog"
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content shadow">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <i className="bi bi-lock-fill me-2 text-success" />
+                    Complete Payment — ₹{total}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={handleCancelModal}
+                  />
+                </div>
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <CheckoutForm
+                    clientSecret={clientSecret}
+                    paymentIntentId={paymentIntentId}
+                    totalPaise={totalPaise}
+                    onSuccess={handlePaymentSuccess}
+                    onCancel={handleCancelModal}
+                  />
+                </Elements>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
-export default Cart;
+export default Cart

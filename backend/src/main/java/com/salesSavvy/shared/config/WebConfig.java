@@ -13,15 +13,19 @@ import java.util.List;
 public class WebConfig {
 
     @Value("${cors.allowed-origins:http://localhost:5173}")
-    private List<String> allowedOrigins;
+    private List<String> allowedOrigins = new java.util.ArrayList<>();
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
+            @SuppressWarnings("null")
             public void addCorsMappings(@NonNull CorsRegistry registry) {
+                // Pass origins directly as individual String args to avoid
+                // the "new array just for toArray" and null-type-safety warnings
+                String[] origins = allowedOrigins.stream().toArray(String[]::new);
                 registry.addMapping("/**")
-                        .allowedOrigins(allowedOrigins.toArray(new String[0]))
+                        .allowedOrigins(origins)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .allowedHeaders("*")
                         .allowCredentials(true)

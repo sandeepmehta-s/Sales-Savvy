@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import OrderCard from '../components/orders/OrderCard'
 import API from '../services/api'
@@ -40,9 +41,10 @@ const Orders = () => {
     return (
       <div className="container text-center mt-5">
         <h4>Please login to view your orders</h4>
-        <a href="/login" className="btn btn-primary mt-3">
+        {/* Use React Router Link — this is a SPA, avoid full page reloads with <a href> */}
+        <Link to="/login" className="btn btn-primary mt-3">
           Go to Login
-        </a>
+        </Link>
       </div>
     )
 
@@ -61,10 +63,11 @@ const Orders = () => {
             style={{ width: '120px', opacity: 0.7 }}
           />
           <h5 className="mt-3">No orders found</h5>
-          <p className="text-muted">Looks like you haven’t placed any orders yet.</p>
-          <a href="/products" className="btn btn-outline-primary mt-2">
+          <p className="text-muted">Looks like you haven't placed any orders yet.</p>
+          {/* Link instead of <a href> to avoid page reload */}
+          <Link to="/products" className="btn btn-outline-primary mt-2">
             Browse Products
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="row g-4">
@@ -79,4 +82,4 @@ const Orders = () => {
   )
 }
 
-export default Orders;
+export default Orders

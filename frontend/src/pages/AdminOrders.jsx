@@ -22,9 +22,9 @@ const AdminOrders = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = async (stripePaymentIntentId, newStatus) => {
     try {
-      await orderService.updateOrderStatus(orderId, newStatus);
+      await orderService.updateOrderStatus(stripePaymentIntentId, newStatus);
       alert('Order status updated successfully!');
       loadOrders();
     } catch (error) {
@@ -61,9 +61,10 @@ const AdminOrders = () => {
             {orders.length > 0 ? (
               orders.map((order) => (
                 <tr key={order.id}>
-                  <td>#{order.id}</td>
+                  <td>#{order.id?.slice(-6)}</td>
                   <td>{order.username}</td>
-                  <td>₹{order.amount}</td>
+                  {/* amount is stored in paise; divide by 100 for display */}
+                  <td>₹{order.amount ? (order.amount / 100).toFixed(2) : '—'}</td>
                   <td>{order.itemCount} items</td>
                   <td>
                     <span
@@ -84,16 +85,16 @@ const AdminOrders = () => {
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td>
+                    {/* Use stripePaymentIntentId (the business key) for status updates */}
                     <select
                       value={order.status}
                       onChange={(e) =>
-                        updateOrderStatus(order.razorpayOrderId, e.target.value)
+                        updateOrderStatus(order.stripePaymentIntentId, e.target.value)
                       }
                       className="form-select form-select-sm"
                     >
                       <option value="CREATED">Created</option>
                       <option value="PAID">Paid</option>
-                      <option value="ACCEPTED">Accepted</option>
                       <option value="SHIPPED">Shipped</option>
                       <option value="DELIVERED">Delivered</option>
                       <option value="CANCELLED">Cancelled</option>
@@ -104,7 +105,7 @@ const AdminOrders = () => {
             ) : (
               <tr>
                 <td colSpan="7" className="text-center text-muted py-4">
-                  No orders found 😕
+                  No orders found
                 </td>
               </tr>
             )}

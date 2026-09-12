@@ -12,9 +12,14 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/payment")
 public class PaymentController {
+
+    private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     private final PaymentService paymentService;
     private final OrderService orderService;
@@ -75,7 +80,7 @@ public class PaymentController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Order creation failed after Stripe payment confirmed", e);
             response.put("status", "error");
             response.put("message", "Payment was successful but order creation failed");
             response.put("error", e.getMessage());
