@@ -1,177 +1,142 @@
-﻿# AGENT.md — Sales-Savvy
+# AGENT.md — ShopSphere
 
-## 🤖 Agent Instructions
+## Agent Instructions
 
-> **Ye file AI agents ke liye hai.**
-> Koi bhi change karne se pehle `docs/` folder ki relevant file zaroor padho.
-> Change complete hone ke baad corresponding doc file update karo.
+> **Read this file before making any changes to the project.**
+> Always read the relevant file inside `docs/` before editing a feature.
+> Update the corresponding doc after completing any significant change.
 
 ---
 
 ## Project Overview
 
-**Sales-Savvy** ek full-stack e-commerce application hai.
+**ShopSphere** is a full-stack e-commerce web application.
 
-| Layer     | Tech                              | Location          |
-|-----------|-----------------------------------|-------------------|
-| Backend   | Spring Boot 3, Java 17, JPA       | `sales-savvy-be/` |
-| Frontend  | React 18, Vite, Bootstrap 5       | `sales_savvy_fr/` |
-| Database  | MySQL                             | DB name: `ecom`   |
-| Payment   | Razorpay                          | `/payment/**`     |
-| Auth      | JWT (HS256, stateless)            | `auth/security/`  |
-
----
-
-## 📚 Docs — Pehle Padho
-
-| Kya change karna hai              | Konsi doc padho              |
-|-----------------------------------|------------------------------|
-| Auth / Login / Register / JWT     | `docs/auth.md`               |
-| Products CRUD, Stock, Categories  | `docs/products.md`           |
-| Cart operations                   | `docs/cart.md`               |
-| Orders, Order status flow         | `docs/orders.md`             |
-| Razorpay Payment flow             | `docs/payment.md`            |
-| Users, Roles, Admin               | `docs/users.md`              |
-| Security, CORS, JWT filter        | `docs/security.md`           |
-| Environment variables / Config    | `docs/config.md`             |
-| Frontend pages / routes / context | `docs/frontend.md`           |
-| Database schema / entities        | `docs/database.md`           |
+| Layer     | Technology                          | Location    |
+|-----------|-------------------------------------|-------------|
+| Backend   | Spring Boot 3.5, Java 17, MongoDB   | `backend/`  |
+| Frontend  | React 18, Vite, Bootstrap 5         | `frontend/` |
+| Database  | MongoDB Atlas (free tier)           | Atlas Cloud |
+| Payment   | Stripe Payment Intents              | Stripe API  |
+| Hosting   | Render (free tier)                  | render.yaml |
 
 ---
 
-## 📝 Docs Update Rule
-
-Jab bhi koi feature change karo — **usi feature ki doc update karo**.
-Har doc ke end mein `## Changelog` section hai. Wahan add karo:
+## Architecture at a Glance
 
 ```
-- [YYYY-MM-DD] Description of change — reason
+ShopSphere/
+├── backend/                   # Spring Boot REST API
+│   ├── src/main/java/com/salesSavvy/
+│   │   ├── auth/              # JWT auth, login, register
+│   │   ├── user/              # User CRUD
+│   │   ├── product/           # Product catalog
+│   │   ├── cart/              # Shopping cart (embedded CartItems)
+│   │   ├── order/             # Orders (embedded OrderItems)
+│   │   ├── payment/           # Stripe payment
+│   │   └── shared/            # Config, Security, Exceptions
+│   ├── Dockerfile
+│   └── .env.example
+├── frontend/                  # React SPA
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── context/
+│   │   └── services/
+│   └── .env.example
+├── docs/
+│   ├── architecture.md        # System design and data flow
+│   ├── deployment.md          # Render deploy steps
+│   ├── database.md            # MongoDB schema
+│   ├── config.md              # Environment variables reference
+│   └── modules/               # Feature-level docs
+│       ├── auth.md
+│       ├── users.md
+│       ├── products.md
+│       ├── cart.md
+│       ├── orders.md
+│       ├── payment.md
+│       └── security.md
+├── render.yaml                # Render IaC
+├── .gitignore
+└── AGENT.md                   # This file
+
 ```
 
 ---
 
-## Key Rules (Agent ke liye)
+## MongoDB Collections
 
-1. **CORS origin** kabhi hardcode mat karo — `.env` ka `CORS_ALLOWED_ORIGINS` use karo
-2. **Backend URL** frontend mein kabhi hardcode mat karo — `VITE_API_URL` env var use karo
-3. **Payment flow** always atomic hona chahiye — `createOrderAndMarkPaid()` use karo
-4. **Stock deduction** Order create karte time `@Version` optimistic locking ke saath honi chahiye
-5. **Admin endpoints** pe hamesha `@PreAuthorize("hasRole('ADMIN')")` lagao
-6. **Username** `Principal` se nikalo — query param pe blindly trust mat karo
-7. Naya controller add karo toh `@CrossOrigin` mat lagao — global `CorsConfig` sab handle karta hai
-8. Naya `.env` variable add karo toh `docs/config.md` bhi update karo
-9. Nayi class add karo toh **correct feature package** mein daalo (neeche structure dekho)
+| Collection | Document Type | Notes |
+|------------|---------------|-------|
+| `users`    | Users         | Indexed on `username`, `email` |
+| `products` | Product       | `@Version` for optimistic locking |
+| `carts`    | Cart          | CartItems **embedded** |
+| `orders`   | Orders        | OrderItems **embedded** |
+
+**All IDs are `String` (MongoDB ObjectId format).**
 
 ---
 
-## Package Structure (Backend) — Feature-based
+## Payment Flow (Stripe)
 
 ```
-src/main/java/com/salesSavvy/
-│
-├── auth/                          ← Authentication feature
-│   ├── controller/AuthController.java
-│   ├── dto/AuthResponse.java
-│   ├── entity/UserLoginData.java
-│   └── security/
-│       ├── CustomUserDetailsService.java
-│       ├── JwtAuthenticationFilter.java
-│       └── JwtUtil.java
-│
-├── user/                          ← User management feature
-│   ├── controller/UserController.java
-│   ├── dto/UserResponse.java
-│   ├── entity/Users.java
-│   ├── repository/UsersRepository.java
-│   └── service/
-│       ├── UsersService.java
-│       └── UsersServiceImplementation.java
-│
-├── product/                       ← Product catalog feature
-│   ├── controller/ProductController.java
-│   ├── dto/ProductResponse.java
-│   ├── entity/Product.java
-│   ├── repository/ProductRepository.java
-│   └── service/
-│       ├── ProductService.java
-│       └── ProductServiceImplementation.java
-│
-├── cart/                          ← Shopping cart feature
-│   ├── controller/CartController.java
-│   ├── dto/
-│   │   ├── CartItemResponse.java
-│   │   └── CartResponse.java
-│   ├── entity/
-│   │   ├── Cart.java
-│   │   └── CartItem.java
-│   ├── repository/
-│   │   ├── CartItemRepository.java
-│   │   └── CartRepository.java
-│   └── service/
-│       ├── CartService.java
-│       └── CartServiceImplementation.java
-│
-├── order/                         ← Order management feature
-│   ├── controller/OrderController.java
-│   ├── dto/
-│   │   ├── OrderItemResponse.java
-│   │   └── OrderResponse.java
-│   ├── entity/
-│   │   ├── OrderItem.java
-│   │   └── Orders.java
-│   ├── repository/
-│   │   ├── OrderItemRepository.java
-│   │   └── OrderRepository.java
-│   └── service/
-│       ├── OrderService.java
-│       └── OrderServiceImpl.java
-│
-├── payment/                       ← Payment (Razorpay) feature
-│   ├── controller/PaymentController.java
-│   ├── dto/
-│   │   ├── PaymentRequest.java
-│   │   └── PaymentVerifyRequest.java
-│   └── service/
-│       ├── PaymentService.java
-│       └── PaymentServiceImpl.java
-│
-├── shared/                        ← Shared cross-cutting concerns
-│   ├── config/
-│   │   ├── CorsConfig.java
-│   │   ├── SecurityConfig.java
-│   │   └── WebConfig.java
-│   └── exception/
-│       ├── BadRequestException.java
-│       ├── CartOperationException.java
-│       ├── DuplicateResourceException.java
-│       ├── ErrorResponse.java
-│       ├── GlobalExceptionHandler.java
-│       ├── PaymentProcessingException.java
-│       └── ResourceNotFoundException.java
-│
-└── Application.java
+Frontend            Backend            Stripe
+   |                   |                  |
+   |-- POST /payment/create-intent ------->|
+   |<-- { clientSecret, paymentIntentId } |
+   |                   |                  |
+   |-- Stripe.js confirmPayment ---------->|
+   |<-- Payment confirmed                 |
+   |                   |                  |
+   |-- POST /payment/confirm ------------>|
+   |   { paymentIntentId, amount }        |
+   |<-- { orderId, status: PAID }         |
 ```
 
-## Cross-Module Import Rules
-Entities reference each other across modules — always use full qualified import:
-| File | References | Import needed |
-|------|-----------|---------------|
-| `cart/entity/Cart.java` | Users | `import com.salesSavvy.user.entity.Users;` |
-| `cart/entity/CartItem.java` | Product | `import com.salesSavvy.product.entity.Product;` |
-| `order/entity/OrderItem.java` | Product | `import com.salesSavvy.product.entity.Product;` |
-| `order/entity/Orders.java` | Users | `import com.salesSavvy.user.entity.Users;` |
-| `user/entity/Users.java` | Cart, Orders | `import com.salesSavvy.cart.entity.Cart; import com.salesSavvy.order.entity.Orders;` |
+---
 
-## Frontend Structure (`sales_savvy_fr/`)
-```
-src/
-├── components/
-│   ├── auth/          # Login.jsx, Register.jsx
-│   ├── common/        # Header.jsx, Footer.jsx
-│   └── products/      # ProductDetail.jsx
-├── context/           # AuthContext.jsx
-├── pages/             # AdminDashboard, AdminOrders, AdminProducts,
-│                      # AdminUsers, Cart, Home, Orders, Products, Profile
-└── services/          # api.js, auth.js, cart.js, order.js,
-                       # payment.js, product.js, user.js
-```
+## Environment Variables
+
+See [`docs/config.md`](docs/config.md) for the full reference.
+
+| Variable | Used By | Example |
+|----------|---------|---------|
+| `MONGODB_URI` | Backend | `mongodb+srv://...` |
+| `JWT_SECRET` | Backend | 32+ char base64 string |
+| `STRIPE_SECRET_KEY` | Backend | `sk_live_...` |
+| `STRIPE_PUBLISHABLE_KEY` | Both | `pk_live_...` |
+| `STRIPE_WEBHOOK_SECRET` | Backend | `whsec_...` |
+| `CORS_ALLOWED_ORIGINS` | Backend | Frontend URL |
+| `VITE_API_URL` | Frontend | Backend URL |
+
+---
+
+## Key Rules for Agents
+
+1. **Never hardcode URLs** — always read from env vars (`${VARIABLE}` in backend, `import.meta.env.VITE_*` in frontend)
+2. **Never commit `.env`** — only `.env.example` is tracked by git
+3. **IDs are always `String`** — MongoDB ObjectId, not `Long`/`number`
+4. **CartItems are embedded in Cart** — no separate `CartItem` collection
+5. **OrderItems are embedded in Orders** — no separate `OrderItem` collection
+6. **Payment gateway is Stripe only** — Razorpay has been removed
+7. **Update `docs/modules/<feature>.md`** after changing any feature
+8. **Update `frontend/agents.md`** after any frontend-relevant change
+
+---
+
+## Docs Reference
+
+| What you want to know | Read |
+|-----------------------|------|
+| System design, data flow | [`docs/architecture.md`](docs/architecture.md) |
+| Deploy to Render | [`docs/deployment.md`](docs/deployment.md) |
+| MongoDB schemas | [`docs/database.md`](docs/database.md) |
+| All env variables | [`docs/config.md`](docs/config.md) |
+| Auth / JWT | [`docs/modules/auth.md`](docs/modules/auth.md) |
+| User management | [`docs/modules/users.md`](docs/modules/users.md) |
+| Product catalog | [`docs/modules/products.md`](docs/modules/products.md) |
+| Cart logic | [`docs/modules/cart.md`](docs/modules/cart.md) |
+| Order lifecycle | [`docs/modules/orders.md`](docs/modules/orders.md) |
+| Stripe payment | [`docs/modules/payment.md`](docs/modules/payment.md) |
+| Security / CORS | [`docs/modules/security.md`](docs/modules/security.md) |

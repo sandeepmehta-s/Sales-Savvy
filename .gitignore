@@ -1,14 +1,14 @@
-﻿# Environment secrets — NEVER commit
+# Environment secrets — NEVER commit
 .env
 .env.*
 !.env.example
 
 # Java build output
-sales-savvy-be/target/
+backend/target/
 
 # Frontend build
-sales_savvy_fr/dist/
-sales_savvy_fr/node_modules/
+frontend/dist/
+frontend/node_modules/
 
 # IDE
 .idea/
