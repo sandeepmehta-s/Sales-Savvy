@@ -2,7 +2,7 @@
 
 The backend for **ShopSphere**, a full-stack e-commerce platform built with Spring Boot, MongoDB, and Stripe.
 
-##  Tech Stack
+## Tech Stack
 
 - **Framework:** Spring Boot 3.5 (Java 17)
 - **Database:** MongoDB (using Spring Data MongoDB)
@@ -10,6 +10,57 @@ The backend for **ShopSphere**, a full-stack e-commerce platform built with Spri
 - **Payments:** Stripe API (Payment Intents)
 - **Build Tool:** Maven
 - **Containerization:** Docker
+
+---
+
+## System Architecture
+
+```mermaid
+graph TD
+    Client[React Frontend] -->|REST / JSON| API[Spring Boot API]
+    API -->|Spring Data| DB[(MongoDB Atlas)]
+    API -.->|Stripe SDK| Stripe[Stripe API]
+    Client -.->|Stripe.js 3DS| Stripe
+```
+
+## Database Diagram
+
+```mermaid
+erDiagram
+    USERS ||--o| CARTS : "1-to-1"
+    USERS ||--o{ ORDERS : "1-to-Many"
+    
+    USERS {
+        String id PK
+        String username
+        String email
+        String password
+        String role
+    }
+
+    PRODUCTS {
+        String id PK
+        String name
+        BigDecimal price
+        int stockQuantity
+        Long version
+    }
+
+    CARTS {
+        String id PK
+        String username
+        CartItem[] cartItems "Embedded"
+    }
+
+    ORDERS {
+        String id PK
+        String username
+        String stripePaymentIntentId
+        BigDecimal amount
+        String status
+        OrderItem[] items "Embedded"
+    }
+```
 
 ---
 
@@ -23,7 +74,7 @@ Before running the backend, ensure you have the following installed:
 
 ---
 
-##  Environment Configuration
+## Environment Configuration
 
 1. Locate the `.env.example` file in the `backend/` directory.
 2. Copy it to create your local environment file:
@@ -43,7 +94,7 @@ Before running the backend, ensure you have the following installed:
 
 ---
 
-## ‍♂Running the Application
+## Running the Application
 
 ### Option 1: Using Maven (Local)
 
@@ -75,7 +126,7 @@ A production-ready `Dockerfile` is included using a multi-stage build.
 
 ---
 
-##  Project Structure
+## Project Structure
 
 ```
 src/main/java/com/shopSphere/
@@ -90,9 +141,8 @@ src/main/java/com/shopSphere/
 
 ---
 
-##  Documentation
+## Documentation
 
 For deep-dive technical details regarding system architecture, data models, and API behaviors, please see the `docs/` folder located in this directory (or the repository root).
 
 > **Note for AI Agents:** Please read `agents.md` before modifying this backend.
-
